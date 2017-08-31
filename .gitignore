@@ -1,3 +1,13 @@
 *.jl.cov
 *.jl.*.cov
 *.jl.mem
+/notes/indirect_likelihood_notes.aux
+/notes/auto/indirect_likelihood_notes.el
+/notes/indirect_likelihood_notes.bcf
+/notes/indirect_likelihood_notes.blg
+/notes/indirect_likelihood_notes.log
+/notes/indirect_likelihood_notes.out
+/notes/indirect_likelihood_notes.pdf
+/notes/indirect_likelihood_notes.rel
+/notes/indirect_likelihood_notes.run.xml
+/notes/indirect_likelihood_notes.synctex.gz
