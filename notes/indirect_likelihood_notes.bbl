@@ -1,0 +1,46 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 2.8 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \sortlist[entry]{nyt/global/}
+    \entry{minka2000old}{article}{}
+      \name{author}{1}{}{%
+        {{uniquename=0,hash=4df6706cd19083012a7708b6abb4edd0}{%
+           family={Minka},
+           familyi={M\bibinitperiod},
+           given={Thomas\bibnamedelima P},
+           giveni={T\bibinitperiod\bibinitdelim P\bibinitperiod}}}%
+      }
+      \strng{namehash}{4df6706cd19083012a7708b6abb4edd0}
+      \strng{fullhash}{4df6706cd19083012a7708b6abb4edd0}
+      \strng{authornamehash}{4df6706cd19083012a7708b6abb4edd0}
+      \strng{authorfullhash}{4df6706cd19083012a7708b6abb4edd0}
+      \field{sortinit}{M}
+      \field{sortinithash}{c26a05ef03e4429073ed5c825140fac3}
+      \field{labeldatesource}{year}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{\url{https://tminka.github.io/papers/matrix/}}
+      \field{title}{Old and new matrix algebra useful for statistics}
+      \field{year}{2000}
+    \endentry
+  \endsortlist
+\endrefsection
+\endinput
+

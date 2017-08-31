@@ -1,0 +1,121 @@
+\documentclass[b5paper,11pt]{article}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% packages (and their customizations)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%% spacing and layout
+\usepackage[paper=b5paper, margin=3mm]{geometry} % screen reading layout
+% \usepackage{setspace}
+% \onehalfspacing
+\usepackage[subtle]{savetrees}  % a bit more compact
+% \usepackage{authblk}            % author and affiliation blocks
+
+%%% graphics and colors
+\usepackage[x11names,rgb]{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{fit}
+\usetikzlibrary{arrows.meta}
+
+%%% typesetting
+\usepackage[tt=false]{libertine}
+\usepackage{booktabs}
+\usepackage{dcolumn}
+\newcolumntype{P}{D{.}{.}{3}}
+\newcolumntype{U}{D{.}{.}{2}}
+\newcommand{\rawc}[1]{\multicolumn{1}{c}{#1}}
+
+%%% input and output formats and rendering
+\usepackage[utf8]{inputenc}
+\usepackage[pdfa]{hyperref}
+\usepackage{url}
+\urlstyle{same}                 % same font as in text
+
+%%% references 
+\usepackage[style=authoryear]{biblatex}
+\addbibresource{~/papers/index.bib}
+
+%%% drafting
+\usepackage{fixme}
+\fxsetup{status=draft, theme=color, layout={inline}}
+\renewcommand{\fixmelogo}{\textcolor{black}{\colorbox{Firebrick1}%
+    {\textsf{\textbf{FIX}}}}}
+
+%%% math
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amsfonts}
+\usepackage{mathtools}
+\mathtoolsset{showonlyrefs}
+\usepackage{gensymb}            % consistent math and text mode
+
+%%% misc
+\usepackage{datetime2}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% general macros
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\DeclareMathOperator{\mvnormal}{MvNormal}
+\DeclareMathOperator{\IID}{IID}
+\DeclareMathOperator{\vect}{vec}
+\newcommand{\reals}{\mathbb{R}}
+
+\begin{document}
+
+\begin{center}
+  {\Large{Notes for \textsl{IndirectLikelihood.jl}}}
+
+  \smallskip
+
+  Tam\'as K.~Papp (\url{tkpapp@gmail.com}), \textsl{\DTMtoday}
+\end{center}
+
+These notes contain writeups of the calculations for the \href{https://github.com/tpapp/IndirectLikelihood.jl}{\textsl{IndirectLikelihood.jl}} Julia package which would be tedious to include in the documentation.
+
+\section{Multivariate normal}
+\label{sec:multivariate-normal}
+
+Consider variables $x_i \in \reals^k$ from a multivariate normal distribution
+\begin{equation}
+  x_i \sim \mvnormal(\mu, \Sigma)
+  \qquad
+  i = 1, \dots, n;\ \IID
+\end{equation}
+Define the sample mean and variance
+\begin{equation}
+  m = \frac1n \sum_i x_i
+  \qquad
+  S = \frac1n \sum (x_i-m)(x_i-m)'
+\end{equation}
+The log likelihood of the observations is
+\begin{align}
+  \label{eq:mvnormal-likelihood}
+  \ell(x \mid \mu, \Sigma) &= C_n - \frac{n}{2} \log\det(\Sigma) - \frac12 \sum_i (x_i-\mu)'\Sigma^{-1}(x_i-\mu) =\\
+              &= C_n - \frac{n}{2} \log\det(\Sigma) - \frac{n}2 (m-\mu)'\Sigma^{-1}(m-\mu)
+                - \frac12 \sum_i \bigl(x_i-m)'\Sigma^{-1}(x_i-m)
+\end{align}
+where we have used the constant
+\begin{equation}
+  C_n = -\frac{kn}{2} \log(2\pi)
+\end{equation}
+Since $\Sigma$ is PSD, $m=\mu$ maximizes $\ell$. Differentiation\footnote{Eg \textcite{minka2000old}.} then shows that the ML estimate for the variance matrix is $\Sigma=S$.
+
+We further manipulate the middle term in \eqref{eq:mvnormal-likelihood} as
+\begin{equation}
+  \sum_i (x_i-m)' \Sigma^{-1} (x_i-m) = \left(\sum_i (x_i-m)'\otimes(x_i-m)'\right) \vect(\Sigma^{-1}) =
+  n \vect(S)'\vect(\Sigma^{-1})
+\end{equation}
+Thus the log likelihood can be calculated using summary statistics $m$ and $S$ as
+\begin{equation}
+  \ell(m, S \mid \mu, \Sigma) = -\frac{n}{2}\left( k\log(2\pi) + \log\det(\Sigma) +
+    \bigl[\vect(S) + \vect((m-\mu)(m-\mu)')\bigr]'\vect(\Sigma^{-1})\right)
+\end{equation}
+
+\printbibliography
+
+\end{document}
+
+% Local Variables:
+% reftex-default-bibliography: ("~/papers/index.bib")
+% End:
