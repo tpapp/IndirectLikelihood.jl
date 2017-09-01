@@ -24,11 +24,12 @@ end
     for _ in 1:100
         K = rand(5:10)
         N = K + rand(10:100)
-        μ = randn(K)
-        A = randn(K,K)
-        Σ = A'*A
+        X = randn(2*N, K)
+        mvnX = summary_statistics(MvNormalSS, X)
+        μ, Σ = ML(mvnX)
         Y = randn(N, K)
-        mvn = summary_statistics(MvNormalSS, Y)
-        @test sum(logpdf(MvNormal(μ, Σ), Y')) ≈ loglikelihood(mvn, μ, Σ)
+        mvnY = summary_statistics(MvNormalSS, Y)
+        @test sum(logpdf(MvNormal(μ, Σ), Y')) ≈ loglikelihood(mvnY, μ, Σ)
+        @test indirect_loglikelihood(mvnY, X) ≈ loglikelihood(mvnY, μ, Σ)
     end
 end

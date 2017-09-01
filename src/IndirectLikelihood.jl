@@ -52,8 +52,9 @@ Useful for indirect inference. See
   inference using a parametric auxiliary model. Statistical Science, 30(1),
   72–95.
 """
-indirect_loglikelihood(ss::T, data...) where T =
-    loglikelihood(ss, ML(T(data...))...)
+function indirect_loglikelihood(ss::T, data...) where {T}
+    loglikelihood(ss, ML(summary_statistics(T, data...))...)
+end
 
 ######################################################################
 # model: multivariate normal
@@ -90,7 +91,7 @@ end
 Summary statistics for observations under a multivariate normal model. Each
 observation is a row of `X`.
 """
-function summary_statistics(::Type{MvNormalSS}, X::AbstractMatrix)
+function summary_statistics(::Type{<:MvNormalSS}, X::AbstractMatrix)
     n, k = size(X)
     m, S = mean_and_cov(X, 1; corrected = false)
     MvNormalSS(n, vec(m), S)
