@@ -3,12 +3,12 @@ using Base.Test
 using StatsBase
 using Distributions
 
-@testset "MvNormalSS constructor and ML" begin
+@testset "MvNormalSS summary statistics and ML" begin
     for _ in 1:100
         K = rand(5:10)
         N = K + rand(10:100)
         X = randn(N, K)
-        mvn = MvNormalSS(X)
+        mvn = summary_statistics(MvNormalSS, X)
         @test mvn.n == N
         @test size(mvn.m) == (K, )
         @test mvn.m ≈ vec(mean(X, 1))
@@ -28,6 +28,7 @@ end
         A = randn(K,K)
         Σ = A'*A
         Y = randn(N, K)
-        @test sum(logpdf(MvNormal(μ, Σ), Y')) ≈ loglikelihood(MvNormalSS(Y), μ, Σ)
+        mvn = summary_statistics(MvNormalSS, Y)
+        @test sum(logpdf(MvNormal(μ, Σ), Y')) ≈ loglikelihood(mvn, μ, Σ)
     end
 end
