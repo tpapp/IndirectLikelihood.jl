@@ -14,9 +14,10 @@ using Distributions
         @test mvn.m ≈ vec(mean(X, 1))
         Xc = X .- mvn.m'
         @test mvn.S ≈ (Xc'*Xc)/N
-        @test ML(mvn) == (mvn.m, mvn.S)
+        @test ML(mvn) == MvNormalParams(mvn.m, mvn.S)
         @test size(mvn) == (N, K)
-        @test repr(mvn) == "Summary statistics for multivariate normal, $(N) × $(K) samples"
+        @test repr(mvn) ==
+            "Summary statistics for multivariate normal, $(N) × $(K) samples"
     end
 end
 
@@ -26,10 +27,11 @@ end
         N = K + rand(10:100)
         X = randn(2*N, K)
         mvnX = summary_statistics(MvNormalSS, X)
-        μ, Σ = ML(mvnX)
+        paramsX = ML(mvnX)
         Y = randn(N, K)
         mvnY = summary_statistics(MvNormalSS, Y)
-        @test sum(logpdf(MvNormal(μ, Σ), Y')) ≈ loglikelihood(mvnY, μ, Σ)
-        @test indirect_loglikelihood(mvnY, X) ≈ loglikelihood(mvnY, μ, Σ)
+        ℓ = sum(logpdf(MvNormal(paramsX.μ, paramsX.Σ), Y'))
+        @test ℓ ≈ loglikelihood(mvnY, paramsX)
+        @test ℓ ≈ indirect_loglikelihood(mvnY, mvnX)
     end
 end
