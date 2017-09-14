@@ -9,7 +9,7 @@ using Distributions
         N = K + rand(10:100)
         X = randn(N, K)
         mvn = summary_statistics(MvNormalSS, X)
-        @test mvn.n == N
+        @test mvn.W == N
         @test size(mvn.m) == (K, )
         @test mvn.m ≈ vec(mean(X, 1))
         Xc = X .- mvn.m'

@@ -71,7 +71,7 @@
   Tam\'as K.~Papp (\url{tkpapp@gmail.com}), \textsl{\DTMtoday}
 \end{center}
 
-These notes contain writeups of the calculations for the \href{https://github.com/tpapp/IndirectLikelihood.jl}{\textsl{IndirectLikelihood.jl}} Julia package which would be tedious to include in the documentation.
+\noindent These notes contain writeups of the calculations for the \href{https://github.com/tpapp/IndirectLikelihood.jl}{\textsl{IndirectLikelihood.jl}} Julia package which would be tedious to include in the documentation. There is nothing novel here, these results are well-known.
 
 \section{Multivariate normal}
 \label{sec:multivariate-normal}
@@ -82,7 +82,11 @@ Consider variables $x_i \in \reals^k$ from a multivariate normal distribution
   \qquad
   i = 1, \dots, n;\ \IID
 \end{equation}
-Define the sample mean and variance
+
+\subsection{Unweighted}
+\label{sec:unweighted}
+
+First, we calculate the unweighted ML estimate. Define the sample mean and variance
 \begin{equation}
   m = \frac1n \sum_i x_i
   \qquad
@@ -108,9 +112,49 @@ We further manipulate the middle term in \eqref{eq:mvnormal-likelihood} as
 \end{equation}
 Thus the log likelihood can be calculated using summary statistics $m$ and $S$ as
 \begin{equation}
+  \label{eq:mvnormal-ll}
   \ell(m, S \mid \mu, \Sigma) = -\frac{n}{2}\left( k\log(2\pi) + \log\det(\Sigma) +
     \bigl[\vect(S) + \vect((m-\mu)(m-\mu)')\bigr]'\vect(\Sigma^{-1})\right)
 \end{equation}
+
+\subsection{Weighted}
+\label{sec:weight-mult-norm}
+
+Now assume that we have \emph{frequency weights} $w_i$, and define
+\begin{equation}
+  W = \sum_i w_i
+  \qquad
+  m = \frac1W \sum_i w_i x_i
+  \qquad
+  S = \frac1W \sum_i w_i (x_i - m) (x_i - m)'
+\end{equation}
+Frequency weights should be interpreted loosely as counts, with each $x_i$ representing $w_i$ observations.
+
+The likelihood of all observations is
+\begin{equation}
+  \ell(x\mid\mu,\Sigma) = -\frac{Wk}{2}\log(2\pi) - \frac{W}{2}\log\det(\Sigma)
+  - \frac12 \sum_i w_i (x_i - \mu)'\Sigma^{-1}(x_i-\mu)
+\end{equation}
+Again,
+\begin{equation}
+  \sum_i w_i (x_i - \mu)'\Sigma^{-1}(x_i-\mu) =
+  \sum_i w_i (x_i - m)'\Sigma^{-1}(x_i-m) + W (m - \mu)'\Sigma^{-1}(m-\mu)
+\end{equation}
+which is again minimized by $\mu=m$.
+
+The remaining term is
+\begin{equation}
+  \sum_i w_i (x_i - m)'\Sigma^{-1}(x_i-m) =
+  \left( \sum_i w_i (x_i-m)'\otimes(x_i-m)'\right) \vect(\Sigma^{-1}) =
+  W \vect(S)'\vect(\Sigma^{-1})
+\end{equation}
+Finally, the whole loglikelihood is
+\begin{equation}
+  \label{eq:mvnormal-ll-weighted}
+  \ell(m, S \mid \mu, \Sigma) = -\frac{W}{2}\left( k\log(2\pi) + \log\det(\Sigma) +
+    \bigl[\vect(S) + \vect((m-\mu)(m-\mu)')\bigr]'\vect(\Sigma^{-1})\right)
+\end{equation}
+It is easy to see how~\eqref{eq:mvnormal-ll} and~\eqref{eq:mvnormal-ll-weighted} are similar.
 
 \printbibliography
 

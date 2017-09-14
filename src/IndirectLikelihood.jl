@@ -21,7 +21,7 @@ export
 """
     ML(summary_statistics)
 
-Return the maximum likelihood of the parameters as a tuple using the given
+Return the maximum likelihood of the parameters using the given
 `summary_statistics`. See `loglikelihood`.
 """
 function ML end
@@ -75,34 +75,43 @@ end
 Multivariate normal model with `n` observations, mean `m` and sample covariance
 `S`.
 """
-struct MvNormalSS{Tm <: AbstractVector, TS <: AbstractMatrix}
-    n::Int
+struct MvNormalSS{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
+    "sum of the weights (alternatively, total number of observations)"
+    W::TW
+    "(weighted) sample mean"
     m::Tm
+    "(weighted) sample covariance matrix"
     S::TS
-    function MvNormalSS(n::Int, m::Tm, S::TS) where {Tm <: AbstractVector,
-                                                     TS <: AbstractMatrix}
+    function MvNormalSS(W::TW, m::Tm, S::TS) where {TW <: Real,
+                                                    Tm <: AbstractVector,
+                                                    TS <: AbstractMatrix}
         @argcheck is_conformable_square(m, S)
-        new{Tm, TS}(n, m, S)
+        new{TW, Tm, TS}(W, m, S)
     end
 end
 
-size(ss::MvNormalSS) = ss.n, length(ss.m)
+size(ss::MvNormalSS) = ss.W, length(ss.m)
 
 function show(io::IO, ss::MvNormalSS)
-    n, k = size(ss)
-    print(io, "Summary statistics for multivariate normal, $(n) × $(k) samples")
+    W, k = size(ss)
+    print(io, "Summary statistics for multivariate normal, $(W) × $(k) samples")
 end
 
 """
-    summary_statistics(::Type{MvNormalSS}, X)
+    summary_statistics(::Type{MvNormalSS}, X, [wv::AbstractWeights])
 
 Summary statistics for observations under a multivariate normal model. Each
-observation is a row of `X`.
+observation is a row of `X`. When `wv` is given, use it as weights.
 """
 function summary_statistics(::Type{MvNormalSS}, X::AbstractMatrix)
-    n, k = size(X)
     m, S = mean_and_cov(X, 1; corrected = false)
-    MvNormalSS(n, vec(m), S)
+    MvNormalSS(size(X, 1), vec(m), S)
+end
+
+function summary_statistics(::Type{MvNormalSS},
+                            X::AbstractMatrix, wv::AbstractWeights)
+    m, S = mean_and_cov(X, wv, 1; corrected = false)
+    MvNormalSS(sum(wv), vec(m), S)
 end
 
 """
@@ -133,13 +142,13 @@ and `parameters`, which come from the same model family.
 statistics `ss`.
 """
 function loglikelihood(ss::MvNormalSS, params::MvNormalParams)
-    @unpack n, m, S = ss
+    @unpack W, m, S = ss
     @unpack μ, Σ = params
     K = length(m)
     @argcheck length(μ) == K
     C = cholfact(Σ)
     d = m-μ
-    -n/2*(K*log(2*π) + logdet(C) + dot(vec(S) + vec(d * d'), vec(inv(Σ))))
+    -W/2*(K*log(2*π) + logdet(C) + dot(vec(S) + vec(d * d'), vec(inv(Σ))))
 end
 
 end # module
