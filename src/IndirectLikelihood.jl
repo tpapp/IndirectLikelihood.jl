@@ -39,8 +39,7 @@ function summary_statistics end
 
 1. estimate the model from summary statistics `x` using maximum likelihood,
 
-2. return the likelihood of summary_statistics `y` under the estimated
-parameters.
+2. return the likelihood of summary_statistics `y` under the estimated parameters.
 
 Useful for pseudo-likelihood indirect inference, where `y` would be the observed
 and `x` the simulated data. See in particular
