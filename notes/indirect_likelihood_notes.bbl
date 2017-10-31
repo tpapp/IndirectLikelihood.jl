@@ -19,6 +19,121 @@
 
 \refsection{0}
   \sortlist[entry]{nyt/global/}
+    \entry{alvarez2014bayesian}{article}{}
+      \name{author}{3}{}{%
+        {{uniquename=0,hash=3c336f51bad8cc107ce8e27622b8df71}{%
+           family={Alvarez},
+           familyi={A\bibinitperiod},
+           given={Ignacio},
+           giveni={I\bibinitperiod}}}%
+        {{uniquename=0,hash=b0bd57ee0ab809a86e2869bdc3e11d8d}{%
+           family={Niemi},
+           familyi={N\bibinitperiod},
+           given={Jarad},
+           giveni={J\bibinitperiod}}}%
+        {{uniquename=0,hash=8f71867919a07b37dd00327c103793be}{%
+           family={Simpson},
+           familyi={S\bibinitperiod},
+           given={Matt},
+           giveni={M\bibinitperiod}}}%
+      }
+      \strng{namehash}{adde13a59d0565b92ca27316d06f7b72}
+      \strng{fullhash}{adde13a59d0565b92ca27316d06f7b72}
+      \strng{authornamehash}{adde13a59d0565b92ca27316d06f7b72}
+      \strng{authorfullhash}{adde13a59d0565b92ca27316d06f7b72}
+      \field{sortinit}{A}
+      \field{sortinithash}{3248043b5fe8d0a34dab5ab6b8d4309b}
+      \field{labeldatesource}{year}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{arXiv preprint arXiv:1408.4050}
+      \field{title}{Bayesian inference for a covariance matrix}
+      \field{year}{2014}
+    \endentry
+    \entry{barnard2000modeling}{article}{}
+      \name{author}{3}{}{%
+        {{uniquename=0,hash=e88ccd9dbb7030135c0bca49c9610242}{%
+           family={Barnard},
+           familyi={B\bibinitperiod},
+           given={John},
+           giveni={J\bibinitperiod}}}%
+        {{uniquename=0,hash=c134ba472efacdbe0325f6b6752eeccd}{%
+           family={McCulloch},
+           familyi={M\bibinitperiod},
+           given={Robert},
+           giveni={R\bibinitperiod}}}%
+        {{uniquename=0,hash=85ea5d8c6fc2be6b9cae229fdff73961}{%
+           family={Meng},
+           familyi={M\bibinitperiod},
+           given={Xiao-Li},
+           giveni={X\bibinithyphendelim L\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {JSTOR}%
+      }
+      \strng{namehash}{22c23fd0ea48b538734b4df85f867cca}
+      \strng{fullhash}{22c23fd0ea48b538734b4df85f867cca}
+      \strng{authornamehash}{22c23fd0ea48b538734b4df85f867cca}
+      \strng{authorfullhash}{22c23fd0ea48b538734b4df85f867cca}
+      \field{sortinit}{B}
+      \field{sortinithash}{5f6fa000f686ee5b41be67ba6ff7962d}
+      \field{labeldatesource}{year}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Statistica Sinica}
+      \field{title}{Modeling covariance matrices in terms of standard deviations and correlations, with application to shrinkage}
+      \field{year}{2000}
+      \field{pages}{1281\bibrangedash 1311}
+      \range{pages}{31}
+    \endentry
+    \entry{chung2015weakly}{article}{}
+      \name{author}{5}{}{%
+        {{uniquename=0,hash=4b9791487fbe08a39722e8c1d77d08a9}{%
+           family={Chung},
+           familyi={C\bibinitperiod},
+           given={Yeojin},
+           giveni={Y\bibinitperiod}}}%
+        {{uniquename=0,hash=1e1eb60e3b6e222217bf8e9b24070b28}{%
+           family={Gelman},
+           familyi={G\bibinitperiod},
+           given={Andrew},
+           giveni={A\bibinitperiod}}}%
+        {{uniquename=0,hash=008bffe1f788da09116b223e2510c847}{%
+           family={Rabe-Hesketh},
+           familyi={R\bibinithyphendelim H\bibinitperiod},
+           given={Sophia},
+           giveni={S\bibinitperiod}}}%
+        {{uniquename=0,hash=12b9e8e3a84b52bbc78fbd8322159db3}{%
+           family={Liu},
+           familyi={L\bibinitperiod},
+           given={Jingchen},
+           giveni={J\bibinitperiod}}}%
+        {{uniquename=0,hash=7af980fdfff5af1564391f592b8833f0}{%
+           family={Dorie},
+           familyi={D\bibinitperiod},
+           given={Vincent},
+           giveni={V\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {SAGE Publications Sage CA: Los Angeles, CA}%
+      }
+      \strng{namehash}{573da454fe4669f953983e06f655cfb4}
+      \strng{fullhash}{11fe657fbf8c8704cbfe7013ea538767}
+      \strng{authornamehash}{573da454fe4669f953983e06f655cfb4}
+      \strng{authorfullhash}{11fe657fbf8c8704cbfe7013ea538767}
+      \field{sortinit}{C}
+      \field{sortinithash}{095692fd22cc3c74d7fe223d02314dbd}
+      \field{labeldatesource}{year}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{journaltitle}{Journal of Educational and Behavioral Statistics}
+      \field{number}{2}
+      \field{title}{Weakly informative prior for point estimation of covariance matrices in hierarchical models}
+      \field{volume}{40}
+      \field{year}{2015}
+      \field{pages}{136\bibrangedash 157}
+      \range{pages}{22}
+    \endentry
     \entry{minka2000old}{article}{}
       \name{author}{1}{}{%
         {{uniquename=0,hash=4df6706cd19083012a7708b6abb4edd0}{%

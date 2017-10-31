@@ -59,6 +59,7 @@
 \DeclareMathOperator{\mvnormal}{MvNormal}
 \DeclareMathOperator{\IID}{IID}
 \DeclareMathOperator{\vect}{vec}
+\DeclareMathOperator{\tr}{tr}
 \newcommand{\reals}{\mathbb{R}}
 
 \begin{document}
@@ -108,7 +109,7 @@ Since $\Sigma$ is PSD, $m=\mu$ maximizes $\ell$. Differentiation\footnote{Eg \te
 We further manipulate the middle term in \eqref{eq:mvnormal-likelihood} as
 \begin{equation}
   \sum_i (x_i-m)' \Sigma^{-1} (x_i-m) = \left(\sum_i (x_i-m)'\otimes(x_i-m)'\right) \vect(\Sigma^{-1}) =
-  n \vect(S)'\vect(\Sigma^{-1})
+  n \vect(S)'\vect(\Sigma^{-1}) = n \tr(S\Sigma^{-1})
 \end{equation}
 Thus the log likelihood can be calculated using summary statistics $m$ and $S$ as
 \begin{equation}
@@ -146,7 +147,7 @@ The remaining term is
 \begin{equation}
   \sum_i w_i (x_i - m)'\Sigma^{-1}(x_i-m) =
   \left( \sum_i w_i (x_i-m)'\otimes(x_i-m)'\right) \vect(\Sigma^{-1}) =
-  W \vect(S)'\vect(\Sigma^{-1})
+  W \vect(S)'\vect(\Sigma^{-1}) = W \tr(S\Sigma^{-1})
 \end{equation}
 Finally, the whole loglikelihood is
 \begin{equation}
@@ -155,6 +156,26 @@ Finally, the whole loglikelihood is
     \bigl[\vect(S) + \vect((m-\mu)(m-\mu)')\bigr]'\vect(\Sigma^{-1})\right)
 \end{equation}
 It is easy to see how~\eqref{eq:mvnormal-ll} and~\eqref{eq:mvnormal-ll-weighted} are similar.
+
+\subsection{Regularization with inverse Wishart}
+\label{sec:regul-with-inverse}
+
+For small sample sizes, estimating $\Sigma$ can be difficult. We use the inverse Wishart prior
+\begin{equation}
+  p(\Sigma) \propto |\Sigma|^{-(\nu+k+1)/2} \exp\left(-\frac12 \tr(\Lambda \Sigma^{-1}) \right)
+\end{equation}
+to derive a \emph{maximum a posteriori} estimate.\footnote{The inverse Wishart is not a particularly good choice for inference, but it will do for indirect inference because it is so easy to calculate, and the maximum has a closed form. See \textcite{chung2015weakly}, \textcite{barnard2000modeling}, and \textcite{alvarez2014bayesian} for better Bayesian solutions.}
+
+We are maximizing
+\begin{equation}
+  -\frac{W}2\Bigl( (1+(\nu+k+1)/W) \log\det(\Sigma) +
+    \tr\bigl((\Lambda/W + S)\Sigma\bigr)\Bigr)
+\end{equation}
+which yields
+\begin{equation}
+  \Sigma = \frac{S + \Lambda/W}{1+(\nu+k+1)/W}
+\end{equation}
+It is easy to see that $\Sigma \to S$ as $W \to \infty$. $\nu = k+1$ and $\Lambda=I$ are common default choices.
 
 \printbibliography
 
