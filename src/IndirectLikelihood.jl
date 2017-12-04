@@ -174,13 +174,13 @@ end
 
 function show(io::IO, data::OLS_Data{<:AbstractVector})
     n, k = size(data.X)
-    print(io, "OLS regression, $(n) scalar observations, $(k) covariates")
+    print(io, "OLS regression data, $(n) scalar observations, $(k) covariates")
 end
 
 function show(io::IO, data::OLS_Data{<:AbstractMatrix})
     n, k = size(data.X)
     m = size(data.Y, 2)
-    print(io, "OLS regression, $(n) vector observations of length $(m), $(k) covariates")
+    print(io, "OLS regression data, $(n) vector observations of length $(m), $(k) covariates")
 end
 
 """
@@ -202,6 +202,16 @@ struct OLS_Params{TB <: Union{AbstractMatrix, AbstractVector},
         @argcheck size(Σ) == (m, m)
         new{TB, TΣ}(B, Σ)
     end
+end
+
+function show(io::IO, params::OLS_Params{<:AbstractVector})
+    k = length(params.B)
+    print(io, "OLS regression parameters, $(k) covariates")
+end
+
+function show(io::IO, params::OLS_Params{<:AbstractMatrix})
+    k, m = size(params.B)
+    print(io, "OLS regression parameters, vector observations of length $(m), $(k) covariates")
 end
 
 function MLE(data::OLS_Data)

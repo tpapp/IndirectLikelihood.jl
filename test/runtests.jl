@@ -67,9 +67,10 @@ end
         Y = X * β + randn(n)
         data = OLS_Data(Y, X)
         @test repr(data) ==
-            "OLS regression, $(n) scalar observations, $(k) covariates"
+            "OLS regression data, $(n) scalar observations, $(k) covariates"
         @test_throws ArgumentError OLS_Data(randn(n+1), X)
         params = MLE(data)
+        @test repr(params) == "OLS regression parameters, $(k) covariates"
         @test params.B ≈ (X \ Y)
         @test params.Σ ≈ sum(abs2, Y - X * (X \ Y)) / n
         for _ in 1:10
@@ -91,9 +92,11 @@ end
     Y = X * B + randn(n, m) * A
     data = OLS_Data(Y, X)
     @test repr(data) ==
-        "OLS regression, $(n) vector observations of length $(m), $(k) covariates"
+        "OLS regression data, $(n) vector observations of length $(m), $(k) covariates"
     @test_throws ArgumentError OLS_Data(randn(n+1, ), X)
     params = MLE(data)
+    @test repr(params) ==
+        "OLS regression parameters, vector observations of length $(m), $(k) covariates"
     @test params.B ≈ (X \ Y)
     E = Y - X * (X \ Y)
     @test params.Σ ≈ E'*E / n
