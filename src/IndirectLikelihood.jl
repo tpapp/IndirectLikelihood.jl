@@ -222,8 +222,8 @@ function MLE(data::OLS_Data)
     OLS_Params(B, Σ)
 end
 
-function loglikelihood(data::OLS_Data{TY}, params::OLS_Params{TB, TΣ}) where
-    {TY <: AbstractVector, TB <: AbstractVector, TΣ <: Real}
+function loglikelihood(data::OLS_Data{<: AbstractVector},
+                       params::OLS_Params{<: AbstractVector})
     @unpack Y, X = data
     @unpack B, Σ = params
     n = length(Y)
@@ -233,8 +233,8 @@ function loglikelihood(data::OLS_Data{TY}, params::OLS_Params{TB, TΣ}) where
     -0.5 * (n*(log(2*π) + log(Σ)) + sum(abs2, E)/Σ)
 end
 
-function loglikelihood(data::OLS_Data{TY}, params::OLS_Params{TB, TΣ}) where
-    {TY <: AbstractMatrix, TB <: AbstractMatrix, TΣ <: AbstractMatrix}
+function loglikelihood(data::OLS_Data{<: AbstractMatrix},
+                       params::OLS_Params{<: AbstractMatrix})
     @unpack Y, X = data
     @unpack B, Σ = params
     n, m = size(Y)
