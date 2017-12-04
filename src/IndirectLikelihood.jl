@@ -172,6 +172,17 @@ struct OLS_Data{TY <: Union{AbstractMatrix, AbstractVector},
     end
 end
 
+function show(io::IO, data::OLS_Data{<:AbstractVector})
+    n, k = size(data.X)
+    print(io, "OLS regression, $(n) scalar observations, $(k) covariates")
+end
+
+function show(io::IO, data::OLS_Data{<:AbstractMatrix})
+    n, k = size(data.X)
+    m = size(data.Y, 2)
+    print(io, "OLS regression, $(n) vector observations of length $(m), $(k) covariates")
+end
+
 """
     OLS_Params(B, Σ)
 
