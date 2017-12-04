@@ -1,7 +1,7 @@
 module IndirectLikelihood
 
 using ArgCheck
-using DocstringExtensions
+using DocStringExtensions
 using Parameters
 using StatsBase
 
@@ -9,41 +9,16 @@ import Base: size, show
 
 import StatsBase: loglikelihood
 
-export
-    # general interface
-    ML, summary_statistics, loglikelihood, indirect_loglikelihood,
-    # specific models
-    MvNormalSS, MvNormalParams
-
 
 # general interface
 
 """
-    summary_statistics(::Type{T}, data...)
+    MLE(data)
 
-Compute summary statistics of the given type `T` using `data`. The
-interpretation of `data` depends on `T`.
+Return the maximum likelihood of the parameters using the given data, using a
+model determined by its type. See also [`loglikelihood`](@ref).
 """
-function summary_statistics end
-
-"""
-    loglikelihood(summary_statistics, parameters)
-
-Return the log likelihood of the data with the given `summary_statistics` under
-and `parameters`, which come from the same model family.
-
-`loglikelihood(ss, ML(ss))` maximizes the loglikelihood for given summary
-statistics `ss`.
-"""
-function loglikelihood end
-
-"""
-    ML(summary_statistics)
-
-Return the maximum likelihood of the parameters using the given
-`summary_statistics`. See `loglikelihood`.
-"""
-function ML end
+function MLE end
 
 """
     indirect_loglikelihood(y, x)
@@ -64,13 +39,13 @@ and `x` the simulated data. See in particular
   inference using a parametric auxiliary model. Statistical Science, 30(1),
   72–95.
 """
-indirect_loglikelihood(y, x) = loglikelihood(y, ML(x))
+indirect_loglikelihood(y, x) = loglikelihood(y, MLE(x))
 
 
 # model: multivariate normal
 
 """
-    is_conformable_square(vector, matrix)
+    $SIGNATURES
 
 Test if `matrix` is square and conformable with `vector`.
 """
@@ -80,19 +55,19 @@ function is_conformable_square(vector::AbstractVector, matrix::AbstractMatrix)
 end
 
 """
-    MvNormalSS(n, m, S)
+    MvNormal_SS(n, m, S)
 
-Multivariate normal model with `n` observations, mean `m` and sample covariance
-`S`.
+Multivariate normal model summary statistics with `n` observations, mean `m` and
+sample covariance `S`. Only saves the summary statistics.
 """
-struct MvNormalSS{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
+struct MvNormal_SS{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
     "sum of the weights (alternatively, total number of observations)"
     W::TW
     "(weighted) sample mean"
     m::Tm
     "(weighted) sample covariance matrix"
     S::TS
-    function MvNormalSS(W::TW, m::Tm, S::TS) where {TW <: Real,
+    function MvNormal_SS(W::TW, m::Tm, S::TS) where {TW <: Real,
                                                     Tm <: AbstractVector,
                                                     TS <: AbstractMatrix}
         @argcheck is_conformable_square(m, S)
@@ -100,49 +75,64 @@ struct MvNormalSS{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
     end
 end
 
-size(ss::MvNormalSS) = ss.W, length(ss.m)
+size(ss::MvNormal_SS) = ss.W, length(ss.m)
 
-function show(io::IO, ss::MvNormalSS)
+function show(io::IO, ss::MvNormal_SS)
     W, k = size(ss)
     print(io, "Summary statistics for multivariate normal, $(W) × $(k) samples")
 end
 
 """
-    summary_statistics(::Type{MvNormalSS}, X, [wv::AbstractWeights])
+    $SIGNATURES
 
-Summary statistics for observations under a multivariate normal model. Each
-observation is a row of `X`. When `wv` is given, use it as weights.
+Multivariate normal summary statistics from observations (each row of `X` is an
+observation).
 """
-function summary_statistics(::Type{MvNormalSS}, X::AbstractMatrix)
+function MvNormal_SS(X::AbstractMatrix)
     m, S = mean_and_cov(X, 1; corrected = false)
-    MvNormalSS(size(X, 1), vec(m), S)
-end
-
-function summary_statistics(::Type{MvNormalSS},
-                            X::AbstractMatrix, wv::AbstractWeights)
-    m, S = mean_and_cov(X, wv, 1; corrected = false)
-    MvNormalSS(sum(wv), vec(m), S)
+    MvNormal_SS(size(X, 1), vec(m), S)
 end
 
 """
-    MvNormalParams(μ, Σ)
+    $SIGNATURES
+
+Multivariate normal summary statistics from observations (each row of `X` is an
+observation), with weights.
+"""
+function MvNormal_SS(X::AbstractMatrix, wv::AbstractWeights)
+    m, S = mean_and_cov(X, wv, 1; corrected = false)
+    MvNormal_SS(sum(wv), vec(m), S)
+end
+
+"""
+    MvNormal_Params(μ, Σ)
 
 Parameters for the multivariate normal model ``x ∼ MvNormal(μ, Σ)``.
 """
-struct MvNormalParams{Tμ, TΣ}
+struct MvNormal_Params{Tμ, TΣ}
     "mean"
     μ::Tμ
     "variance"
     Σ::TΣ
-    function MvNormalParams(μ::Tμ, Σ::TΣ) where {Tμ, TΣ}
+    function MvNormal_Params(μ::Tμ, Σ::TΣ) where {Tμ, TΣ}
         @argcheck is_conformable_square(μ, Σ)
         new{Tμ, TΣ}(μ, Σ)
     end
 end
 
-ML(ss::MvNormalSS) = MvNormalParams(ss.m, ss.S)
+MLE(ss::MvNormal_SS) = MvNormal_Params(ss.m, ss.S)
 
-function loglikelihood(ss::MvNormalSS, params::MvNormalParams)
+# NOTE: documenting this here, since the generic function is defined in another
+# package
+"""
+    loglikelihood(data, params)
+
+Return the log likelihood of the `data` under parameters `params`, which come
+from the same model family.
+
+`loglikelihood(data, MLE(data))` maximizes the loglikelihood for given `data`.
+"""
+function loglikelihood(ss::MvNormal_SS, params::MvNormal_Params)
     @unpack W, m, S = ss
     @unpack μ, Σ = params
     K = length(m)
@@ -156,7 +146,7 @@ end
 # OLS
 
 """
-    OLS_data(Y, X)
+    OLS_Data(Y, X)
 
 Ordinary least squares with dependent variable `Y` and design matrix `X`.
 
@@ -170,32 +160,32 @@ variance matrix ``Σ`` (multivariate linear regression), or
 matrix, `β` is a parameter vector of `k` elements, and `ϵᵢ ∼ N(0, σ)` where `σ`
 is the variance of the normal error.
 
-See [`OLS_params`](@ref) for the parameters.
+See [`OLS_Params`](@ref) for the parameters.
 """
-struct OLS_data{TY <: Union{AbstractMatrix, AbstractVector},
+struct OLS_Data{TY <: Union{AbstractMatrix, AbstractVector},
                 TX <: AbstractMatrix}
     Y::TY
     X::TX
-    function OLS_data(Y::TY, X::TX) where {TY, TX}
+    function OLS_Data(Y::TY, X::TX) where {TY, TX}
         @argcheck size(Y, 1) == size(X, 1)
         new{TY, TX}(Y, X)
     end
 end
 
 """
-    OLS_params(B, Σ)
+    OLS_Params(B, Σ)
 
 Maximum likelihood estimated parameters for an OLS regression. See
-[`OLS_data`](@ref).
+[`OLS_Data`](@ref).
 """
-struct OLS_params{TB <: Union{AbstractMatrix, AbstractVector},
+struct OLS_Params{TB <: Union{AbstractMatrix, AbstractVector},
                   TΣ <: Union{<:Real, AbstractMatrix}}
     B::TB
     Σ::TΣ
-    function OLS_params(B::TB, Σ::TΣ) where {TB <: AbstractVector, TΣ <: Real}
+    function OLS_Params(B::TB, Σ::TΣ) where {TB <: AbstractVector, TΣ <: Real}
         new{TB, TΣ}(B, Σ)
     end
-    function OLS_params(B::TB, Σ::TΣ) where {TB <: AbstractMatrix,
+    function OLS_Params(B::TB, Σ::TΣ) where {TB <: AbstractMatrix,
                                              TΣ <: AbstractMatrix}
         m = size(B, 2)
         @argcheck size(Σ) == (m, m)
@@ -203,15 +193,15 @@ struct OLS_params{TB <: Union{AbstractMatrix, AbstractVector},
     end
 end
 
-function ML(data::OLS_data)
+function MLE(data::OLS_Data)
     @unpack Y, X = data
     B = qrfact(X) \ Y
     E = Y - X*B
     Σ = E'*E / size(X, 1)
-    OLS_params(B, Σ)
+    OLS_Params(B, Σ)
 end
 
-function loglikelihood(data::OLS_data{TY}, params::OLS_params{TB, TΣ}) where
+function loglikelihood(data::OLS_Data{TY}, params::OLS_Params{TB, TΣ}) where
     {TY <: AbstractVector, TB <: AbstractVector, TΣ <: Real}
     @unpack Y, X = data
     @unpack B, Σ = params
@@ -222,7 +212,7 @@ function loglikelihood(data::OLS_data{TY}, params::OLS_params{TB, TΣ}) where
     -0.5 * (n*(log(2*π) + log(Σ)) + sum(abs2, E)/Σ)
 end
 
-function loglikelihood(data::OLS_data{TY}, params::OLS_params{TB, TΣ}) where
+function loglikelihood(data::OLS_Data{TY}, params::OLS_Params{TB, TΣ}) where
     {TY <: AbstractMatrix, TB <: AbstractMatrix, TΣ <: AbstractMatrix}
     @unpack Y, X = data
     @unpack B, Σ = params
