@@ -1,6 +1,7 @@
 module IndirectLikelihood
 
 using ArgCheck
+using DocstringExtensions
 using Parameters
 using StatsBase
 
