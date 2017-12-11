@@ -1,12 +1,12 @@
+__precompile__()
 module IndirectLikelihood
-
-using ArgCheck
-using DocStringExtensions
-using Parameters
-using StatsBase
 
 import Base: size, show
 
+using ArgCheck: @argcheck
+using DocStringExtensions: SIGNATURES
+using Parameters: @unpack
+using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
 
 

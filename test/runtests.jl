@@ -2,8 +2,8 @@ import IndirectLikelihood:
     MLE, loglikelihood, indirect_loglikelihood,
     MvNormal_SS, MvNormal_Params, OLS_Data, OLS_Params
 using Base.Test
-using StatsBase
-using Distributions
+using StatsBase: Weights, loglikelihood
+using Distributions: logpdf, Normal, MvNormal
 
 @testset "MvNormal_SS summary statistics and MLE" begin
     for _ in 1:100
