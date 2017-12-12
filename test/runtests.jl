@@ -1,7 +1,13 @@
 import IndirectLikelihood:
+    # general
     MLE, loglikelihood, indirect_loglikelihood,
-    MvNormal_SS, MvNormal_Params, OLS_Data, OLS_Params
+    # multivariate normal
+    MvNormal_SS, MvNormal_Params,
+    # OLS
+    OLS_Data, OLS_Params, add_intercept
+
 using Base.Test
+
 using StatsBase: Weights, loglikelihood
 using Distributions: logpdf, Normal, MvNormal
 
@@ -107,4 +113,15 @@ end
         @test loglikelihood(data, OLS_Params(B′, Σ′)) ≈
             loglikelihood(MvNormal(zeros(m), Σ′), (Y - X * B′)')
     end
+end
+
+@testset "adding intercept" begin
+    N = 11
+    x = randn(N)
+    X = randn(N, 3)
+    x2 = randn(N)
+    @test add_intercept(x) == hcat(ones(N), x)
+    @test add_intercept(X) == hcat(ones(N), X)
+    @test add_intercept(x, x2) == hcat(ones(N), x, x2)
+    @test_throws DimensionMismatch add_intercept(x, ones(N+1))
 end

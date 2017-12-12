@@ -246,4 +246,15 @@ function loglikelihood(data::OLS_Data{<: AbstractMatrix},
     -0.5 * (n*(m*log(2*π) + 2*logdet(U)) + sum(abs2, A))
 end
 
+"""
+    $SIGNATURES
+
+Add an intercept to a matrix or vector of covariates.
+"""
+add_intercept(X::AbstractMatrix{T}) where T = hcat(ones(T, size(X, 1)), X)
+
+add_intercept(x::AbstractVector{T}) where T = hcat(ones(T, length(x)), x)
+
+add_intercept(xs...) = add_intercept(hcat(xs...))
+
 end # module
