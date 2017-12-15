@@ -216,7 +216,7 @@ end
 
 function MLE(data::OLS_Data)
     @unpack Y, X = data
-    B = qrfact(X) \ Y
+    B = qrfact(X, Val{true}) \ Y
     E = Y - X*B
     Σ = E'*E / size(X, 1)
     OLS_Params(B, Σ)
