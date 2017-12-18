@@ -5,6 +5,7 @@ import Base: size, show
 
 using ArgCheck: @argcheck
 using DocStringExtensions: SIGNATURES
+using ForwardDiff: jacobian
 using Parameters: @unpack
 using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
@@ -233,6 +234,27 @@ function loglikelihood(data::OLS_Data{<: AbstractVector},
     -0.5 * (n*(log(2*π) + log(Σ)) + sum(abs2, E)/Σ)
 end
 
+"""
+    $SIGNATURES
+
+Sum of the log pdf for observations ``xᵢ ∼ MultivariateNormal(0, Σ)``, where
+``xᵢ`` are stored in the rows of `X`.
+
+Handles `ForwardDiff.Dual` types and singular covariance matrices. Helper
+function, not part of the API.
+"""
+function _logpdf_normal(X::AbstractMatrix{TX},
+                        Σ::AbstractMatrix{TΣ}) where {TX, TΣ}
+    n, m = size(X)
+    try
+        U = chol(Σ)
+        A = X / U
+        -0.5 * (n*(m*log(2*π) + 2*logdet(U)) + sum(abs2, A))
+    catch
+        convert(promote_type(TX, TΣ), -Inf)
+    end
+end
+
 function loglikelihood(data::OLS_Data{<: AbstractMatrix},
                        params::OLS_Params{<: AbstractMatrix})
     @unpack Y, X = data
@@ -240,10 +262,7 @@ function loglikelihood(data::OLS_Data{<: AbstractMatrix},
     n, m = size(Y)
     @argcheck size(B, 1) == size(X, 2) # k
     @argcheck size(B, 2) == m
-    E = Y - X * B
-    U = chol(Σ)
-    A = E / U
-    -0.5 * (n*(m*log(2*π) + 2*logdet(U)) + sum(abs2, A))
+    _logpdf_normal(Y - X * B, Σ)
 end
 
 """
@@ -256,5 +275,168 @@ add_intercept(X::AbstractMatrix{T}) where T = hcat(ones(T, size(X, 1)), X)
 add_intercept(x::AbstractVector{T}) where T = hcat(ones(T, length(x)), x)
 
 add_intercept(xs...) = add_intercept(hcat(xs...))
+
+
+# modeling API
+
+"""
+Abstract type for indirect likelihood problems.
+
+## Terminology
+
+"""
+abstract type AbstractIndirectLikelihoodProblem end
+
+"""
+    IndirectLikelihoodProblem(structural_model, auxiliary_model, observed_data)
+
+A simple wrapper for an indirect likelihood problem.
+
+## Terminology
+
+A *structural model* and a set of parameters ``θ`` are sufficient to generate
+*simulated data*, by implementing a method for [`simulate_data(model,
+θ)`](@ref). When applicable, independent variables necessary for simulation
+should be included in the *structural model*.
+
+An *auxiliary model* is a simpler model for which we can calculate the
+likelihood. Given simulated data `x`, a maximum likelihood parameter estimate
+``ϕ`` is obtained with `MLE(auxiliary_model, x)`. The log likelihood of
+*observed data* `y` is calculated with `loglikelihood(auxiliary_model, y, ϕ)`.
+
+A *problem* is defined by its structural and auxiliary model, and the observed
+data. Objects of this type are *callable*: when called with the parameters
+(which may be a tuple, or any kind of problem-dependent structure accepted by
+[`simulate_data`](@ref)), it should return the indirect log likelihood. The
+default callable method does this.
+
+The user should implement [`simulate_data`](@ref), [`MLE`](@ref), and
+[`loglikelihood`](@ref), with the signatures above.
+"""
+struct IndirectLikelihoodProblem{S, A, D} <: AbstractIndirectLikelihoodProblem
+    structural_model::S
+    auxiliary_model::A
+    observed_data::D
+end
+
+"""
+    simulate_data(structural_model, θ)
+
+Simulate data from the `structural_model` with the given parameters ``θ``.
+
+Users should define methods.
+"""
+function simulate_data end
+
+"""
+    $SIGNATURES
+
+Return an estimate of the auxiliary parameters `ϕ` as a function of the
+structural parameters `θ`.
+
+This is also known the *mapping* or *binding function* in the indirect inference
+literature.
+"""
+function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
+    @unpack structural_model, auxiliary_model = problem
+    x = simulate_data(structural_model, θ)
+    MLE(auxiliary_model, x)
+end
+
+# """
+#     MLE(auxiliary_model, data)
+
+# Maximum likelihood estimate for the auxiliary model with `data`.
+
+# Users should define methods.
+# """
+# function MLE end
+
+function (problem::IndirectLikelihoodProblem)(θ)
+    @unpack auxiliary_model, observed_data = problem
+    ϕ = indirect_estimate(problem, θ)
+    loglikelihood(auxiliary_model, observed_data, ϕ)
+end
+
+"""
+    $SIGNATURES
+
+Initialize an [`IndirectLikelihoodProblem`](@ref) with simulated data, using
+parameters `θ`.
+
+Useful for debugging and exploration of identification with simulated data.
+"""
+function simulate_problem(structural_model, auxiliary_model, θ)
+    IndirectLikelihoodProblem(structural_model, auxiliary_model,
+                              simulate_data(structural_model, θ))
+end
+
+"""
+    flatten_parameters(auxiliary_model, ϕ)
+
+    flatten_parameters(structural_model, θ)
+
+Convert parameters of the model to a vector.
+"""
+function flatten_parameters end
+
+"""
+    unflatten_parameters(structural_model, vecθ)
+
+Convert a vector `vecθ` to the structural parameters of the model.
+"""
+function unflatten_parameters end
+
+
+"""
+    $SIGNATURES
+
+Similar to [`indirect_estimate`](@ref), but maps vectors to vectors.
+
+[`flatten_parameters`](@ref) and [`unflatten_parameters`](@ref) need to be
+defined for the model components.
+"""
+function indirect_estimate_vec(problem, vecθ)
+    @unpack structural_model, auxiliary_model = problem
+    θ = unflatten_parameters(structural_model, vecθ)
+    ϕ = indirect_estimate(problem, θ)
+    flatten_parameters(auxiliary_model, ϕ)
+end
+
+"""
+    $SIGNATURES
+
+Calculate the local Jacobian of the estimated auxiliary parameters ``ϕ`` at the
+structural parameters ``θ``.
+
+[`flatten_parameters`](@ref) and [`unflatten_parameters`](@ref) need to be
+defined for the model components.
+"""
+function local_jacobian(problem::IndirectLikelihoodProblem, θ)
+    vecθ = flatten_parameters(problem.structural_model, θ)
+    jacobian(vecθ -> indirect_estimate_vec(problem, vecθ), vecθ)
+end
+
+
+# utilities
+
+"""
+    $SIGNATURES
+
+Flattened elements of an upper triangular matrix.
+"""
+function vecU(U::UpperTriangular{T}) where T
+    n = LinAlg.checksquare(U)
+    l = n*(n+1) ÷ 2
+    v = Vector{T}(l)
+    k = 0
+    @inbounds for i in 1:n
+        for j in 1:i
+            v[k + j] = U[j, i]
+        end
+        k += i
+    end
+    v
+end
 
 end # module
