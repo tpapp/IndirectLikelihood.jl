@@ -387,7 +387,6 @@ Convert a vector `vecθ` to the structural parameters of the model.
 """
 function unflatten_parameters end
 
-
 """
     $SIGNATURES
 
