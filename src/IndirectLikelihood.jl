@@ -4,6 +4,7 @@ module IndirectLikelihood
 import Base: size, show
 
 using ArgCheck: @argcheck
+using ContinuousTransformations: transform, inverse
 using DocStringExtensions: SIGNATURES
 using ForwardDiff: jacobian
 using Parameters: @unpack
@@ -13,7 +14,7 @@ import StatsBase: loglikelihood
 export
     MLE, indirect_loglikelihood, loglikelihood,
     add_intercept,
-    IndirectLikelihoodProblem, simulate_problem
+    IndirectLikelihoodProblem, simulate_problem, local_jacobian
 
 
 # general interface
@@ -376,71 +377,93 @@ function simulate_problem(structural_model, auxiliary_model, θ)
                               simulate_data(structural_model, θ))
 end
 
-"""
-    flatten_parameters(auxiliary_model, ϕ)
-
-    flatten_parameters(structural_model, θ)
-
-Convert parameters of the model to a vector.
-"""
-function flatten_parameters end
-
-"""
-    unflatten_parameters(structural_model, vecθ)
-
-Convert a vector `vecθ` to the structural parameters of the model.
-"""
-function unflatten_parameters end
+
+# local analysis
 
 """
     $SIGNATURES
 
-Similar to [`indirect_estimate`](@ref), but maps vectors to vectors.
+Return the values of the argument as a vector, potentially (but not necessarily)
+restricting to those elements that uniquely determine the argument.
 
-[`flatten_parameters`](@ref) and [`unflatten_parameters`](@ref) need to be
-defined for the model components.
+For example, a symmetric matrix would be determined by the diagonal and either
+half.
 """
-function indirect_estimate_vec(problem, vecθ)
-    @unpack structural_model, auxiliary_model = problem
-    θ = unflatten_parameters(structural_model, vecθ)
-    ϕ = indirect_estimate(problem, θ)
-    flatten_parameters(auxiliary_model, ϕ)
+function vec_parameters end
+
+vec_parameters(x::Real) = [x]
+
+vec_parameters(xs::Tuple) = vcat(map(vec_parameters, xs)...)
+
+vec_parameters(xs...) = vec_parameters(xs)
+
+vec_parameters(A::AbstractArray) = vec(A)
+
+"""
+    $SIGNATURES
+
+Flattened elements from the upper triangle. Helper function for
+[`vec_parameters`](@ref).
+"""
+function vec_upper(U::AbstractMatrix{T}) where T
+    n = LinAlg.checksquare(U)
+    l = n*(n+1) ÷ 2
+    v = Vector{T}(l)
+    k = 1
+    @inbounds for i in 1:n
+        for j in 1:i
+            v[k] = U[j, i]
+            k += 1
+        end
+    end
+    v
 end
+
+"""
+    $SIGNATURES
+
+Flattened elements from the lower triangle. Helper function for
+[`vec_parameters`](@ref).
+"""
+function vec_lower(L::AbstractMatrix{T}) where T
+    n = LinAlg.checksquare(L)
+    l = n*(n+1) ÷ 2
+    v = Vector{T}(l)
+    k = 1
+    @inbounds for i in 1:n
+        for j in i:n
+            v[k] = L[j, i]
+            k += 1
+        end
+    end
+    v
+end
+
+vec_parameters(A::Union{Symmetric, UpperTriangular}) = vec_upper(A)
+
+vec_parameters(A::LowerTriangular) = vec_lower(A)
 
 """
     $SIGNATURES
 
 Calculate the local Jacobian of the estimated auxiliary parameters ``ϕ`` at the
-structural parameters ``θ``.
+structural parameters ``θ=θ₀``.
 
-[`flatten_parameters`](@ref) and [`unflatten_parameters`](@ref) need to be
-defined for the model components.
+`transformation` maps a vector of reals `ω` to the parameters `θ` in the format
+acceptable to `structural_model`.
+
+`vecϕ` is a function that is used to flatten the auxiliary paramaeters to a
+vector. Defaults to [`vec_parameters`](@ref).
 """
-function local_jacobian(problem::IndirectLikelihoodProblem, θ)
-    vecθ = flatten_parameters(problem.structural_model, θ)
-    jacobian(vecθ -> indirect_estimate_vec(problem, vecθ), vecθ)
-end
-
-
-# utilities
-
-"""
-    $SIGNATURES
-
-Flattened elements of an upper triangular matrix.
-"""
-function vecU(U::UpperTriangular{T}) where T
-    n = LinAlg.checksquare(U)
-    l = n*(n+1) ÷ 2
-    v = Vector{T}(l)
-    k = 0
-    @inbounds for i in 1:n
-        for j in 1:i
-            v[k + j] = U[j, i]
-        end
-        k += i
+function local_jacobian(problem::IndirectLikelihoodProblem, transformation, θ₀;
+                        vecϕ = vec_parameters)
+    @unpack structural_model, auxiliary_model = problem
+    ω₀ = inverse(transformation, θ₀)
+    jacobian(ω₀) do ω
+        θ = transform(transformation, ω)
+        ϕ = indirect_estimate(problem, θ)
+        vecθ(auxiliary_model, ϕ)
     end
-    v
 end
 
 end # module
