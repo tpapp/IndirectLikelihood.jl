@@ -137,3 +137,13 @@ end
     @test vec_parameters(1.0) == [1.0]
     @test vec_parameters((1.0, [2, 3])) == [1.0, 2.0, 3.0]
 end
+
+@testset "vectorizing parameters (OLS)" begin
+    b = randn(rand(3:10))
+    σ² = abs(randn())
+    @test vec_parameters(OLS_Params(b, σ²)) == vcat(b, σ²)
+    B = randn(10, 3)
+    Σ = randn(3, 3) |> x->x*x'
+    @test vec_parameters(OLS_Params(B, Σ)) == vcat(vec_parameters(B),
+                                                   vec_parameters(Σ))
+end

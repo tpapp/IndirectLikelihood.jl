@@ -443,6 +443,8 @@ vec_parameters(A::Union{Symmetric, UpperTriangular}) = vec_upper(A)
 
 vec_parameters(A::LowerTriangular) = vec_lower(A)
 
+vec_parameters(ϕ::OLS_Params) = vec_parameters(ϕ.B, ϕ.Σ)
+
 """
     $SIGNATURES
 
