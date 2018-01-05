@@ -10,6 +10,11 @@ using Parameters: @unpack
 using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
 
+export
+    MLE, indirect_loglikelihood, loglikelihood,
+    add_intercept,
+    IndirectLikelihoodProblem, simulate_problem
+
 
 # general interface
 
