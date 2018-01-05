@@ -1,10 +1,12 @@
-import IndirectLikelihood:
-    # general
-    MLE, loglikelihood, indirect_loglikelihood,
+using IndirectLikelihood
+
+using IndirectLikelihood:
     # multivariate normal
     MvNormal_SS, MvNormal_Params,
     # OLS
-    OLS_Data, OLS_Params, add_intercept
+    OLS_Data, OLS_Params, add_intercept,
+    # imported for testing
+    vec_parameters
 
 using Base.Test
 
@@ -124,4 +126,14 @@ end
     @test add_intercept(X) == hcat(ones(N), X)
     @test add_intercept(x, x2) == hcat(ones(N), x, x2)
     @test_throws DimensionMismatch add_intercept(x, ones(N+1))
+end
+
+@testset "vectorizing parameters" begin
+    A = Matrix(reshape(1:9, 3, :))
+    @test vec_parameters(UpperTriangular(A)) == [1, 4, 5, 7, 8, 9]
+    @test vec_parameters(LowerTriangular(A)) == [1, 2, 3, 5, 6, 9]
+    @test vec_parameters(Symmetric(A)) == [1, 4, 5, 7, 8, 9] # may change
+    @test vec_parameters(A) == Vector(1:9)
+    @test vec_parameters(1.0) == [1.0]
+    @test vec_parameters((1.0, [2, 3])) == [1.0, 2.0, 3.0]
 end
