@@ -451,20 +451,23 @@ vec_parameters(ϕ::OLS_Params) = vec_parameters(ϕ.B, ϕ.Σ)
 Calculate the local Jacobian of the estimated auxiliary parameters ``ϕ`` at the
 structural parameters ``θ=θ₀``.
 
-`transformation` maps a vector of reals `ω` to the parameters `θ` in the format
-acceptable to `structural_model`.
+`ω_to_θ` maps a vector of reals `ω` to the parameters `θ` in the format
+acceptable to `structural_model`. It should support
+[`ContinuousTransformations.transform`](@ref) and
+[`ContinuousTransformations.inverse`](@ref). See, for example,
+[`ContinuousTransformations.TupleTransformation`](@ref).
 
-`vecϕ` is a function that is used to flatten the auxiliary paramaeters to a
+`vecϕ` is a function that is used to flatten the auxiliary parameters to a
 vector. Defaults to [`vec_parameters`](@ref).
 """
-function local_jacobian(problem::IndirectLikelihoodProblem, transformation, θ₀;
+function local_jacobian(problem::IndirectLikelihoodProblem, θ₀, ω_to_θ;
                         vecϕ = vec_parameters)
     @unpack structural_model, auxiliary_model = problem
-    ω₀ = inverse(transformation, θ₀)
+    ω₀ = inverse(ω_to_θ, θ₀)
     jacobian(ω₀) do ω
-        θ = transform(transformation, ω)
+        θ = transform(ω_to_θ, ω)
         ϕ = indirect_estimate(problem, θ)
-        vecθ(auxiliary_model, ϕ)
+        vecϕ(ϕ)
     end
 end
 
