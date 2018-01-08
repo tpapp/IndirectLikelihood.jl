@@ -287,9 +287,6 @@ add_intercept(xs...) = add_intercept(hcat(xs...))
 
 """
 Abstract type for indirect likelihood problems.
-
-## Terminology
-
 """
 abstract type AbstractIndirectLikelihoodProblem end
 
