@@ -297,6 +297,9 @@ A simple wrapper for an indirect likelihood problem.
 
 ## Terminology
 
+The *log_prior* is a callable that returns the log prior for a set of structural
+parameters ``θ``.
+
 A *structural model* and a set of parameters ``θ`` are sufficient to generate
 *simulated data*, by implementing a method for [`simulate_data(model,
 θ)`](@ref). When applicable, independent variables necessary for simulation
@@ -316,7 +319,8 @@ default callable method does this.
 The user should implement [`simulate_data`](@ref), [`MLE`](@ref), and
 [`loglikelihood`](@ref), with the signatures above.
 """
-struct IndirectLikelihoodProblem{S, A, D} <: AbstractIndirectLikelihoodProblem
+struct IndirectLikelihoodProblem{P, S, A, D} <: AbstractIndirectLikelihoodProblem
+    log_prior::P
     structural_model::S
     auxiliary_model::A
     observed_data::D
@@ -356,9 +360,9 @@ end
 # function MLE end
 
 function (problem::IndirectLikelihoodProblem)(θ)
-    @unpack auxiliary_model, observed_data = problem
+    @unpack log_prior, auxiliary_model, observed_data = problem
     ϕ = indirect_estimate(problem, θ)
-    loglikelihood(auxiliary_model, observed_data, ϕ)
+    loglikelihood(auxiliary_model, observed_data, ϕ) + log_prior(θ)
 end
 
 """
@@ -369,8 +373,8 @@ parameters `θ`.
 
 Useful for debugging and exploration of identification with simulated data.
 """
-function simulate_problem(structural_model, auxiliary_model, θ)
-    IndirectLikelihoodProblem(structural_model, auxiliary_model,
+function simulate_problem(log_prior, structural_model, auxiliary_model, θ)
+    IndirectLikelihoodProblem(log_prior, structural_model, auxiliary_model,
                               simulate_data(structural_model, θ))
 end
 
