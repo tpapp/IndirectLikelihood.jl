@@ -331,9 +331,23 @@ end
 
 Simulate data from the `structural_model` with the given parameters ``θ``.
 
-Users should define methods.
+Methods should be defined by the user for each `structural_model` type. The
+function should return simulated `data` in the format that can be used by
+`MLE(auxiliary_model, data)`. For infeasible/meaningless parameters, `nothing`
+should be returned.
 """
 function simulate_data end
+
+"""
+    MLE(auxiliary_model, data)
+
+Maximum likelihood estimate for the auxiliary model with `data`.
+
+Methods should be defined by the user for each `auxiliary_model` type. A
+fallback method is defined for `nothing` as data (infeasible parameters). See
+also [`simulate_data`](@ref).
+"""
+MLE(::Any, ::Void) = nothing
 
 """
     $SIGNATURES
@@ -350,19 +364,15 @@ function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
     MLE(auxiliary_model, x)
 end
 
-# """
-#     MLE(auxiliary_model, data)
-
-# Maximum likelihood estimate for the auxiliary model with `data`.
-
-# Users should define methods.
-# """
-# function MLE end
 
 function (problem::IndirectLikelihoodProblem)(θ)
     @unpack log_prior, auxiliary_model, observed_data = problem
     ϕ = indirect_estimate(problem, θ)
-    loglikelihood(auxiliary_model, observed_data, ϕ) + log_prior(θ)
+    if ϕ == nothing
+        -Inf
+    else
+        loglikelihood(auxiliary_model, observed_data, ϕ) + log_prior(θ)
+    end
 end
 
 """
