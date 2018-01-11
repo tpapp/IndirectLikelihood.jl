@@ -12,7 +12,7 @@ using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
 
 export
-    MLE, indirect_loglikelihood, loglikelihood,
+    MLE, indirect_loglikelihood, loglikelihood, simulate_data,
     add_intercept,
     IndirectLikelihoodProblem, simulate_problem, local_jacobian
 
