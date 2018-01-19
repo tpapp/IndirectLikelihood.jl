@@ -7,6 +7,7 @@ using ArgCheck: @argcheck
 using ContinuousTransformations: transform, inverse
 using DocStringExtensions: SIGNATURES
 using ForwardDiff: jacobian
+using MacroTools
 using Parameters: @unpack
 using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
@@ -14,7 +15,29 @@ import StatsBase: loglikelihood
 export
     MLE, indirect_loglikelihood, loglikelihood, simulate_data,
     add_intercept,
-    IndirectLikelihoodProblem, simulate_problem, local_jacobian
+    IndirectLikelihoodProblem, simulate_problem, local_jacobian, random_crv,
+    random_crv!
+
+
+# utilities
+
+"""
+    $SIGNATURES
+
+Informative error message for missing method.
+"""
+macro no_method_info(ex)
+    @capture(ex, f_(args__)) || error("Expected a function name with arguments")
+    msg = "You need to define `$(string(f))` with this model type."
+    f = esc(f)
+    args = map(esc, args)
+    quote
+        function $f($(args...))
+            info($msg)
+            MethodError($f, $(args...))
+        end
+    end
+end
 
 
 # general interface
@@ -25,7 +48,7 @@ export
 Return the maximum likelihood of the parameters using the given data, using a
 model determined by its type. See also [`loglikelihood`](@ref).
 """
-function MLE end
+@no_method_info MLE(data)
 
 """
     indirect_loglikelihood(y, x)
@@ -300,10 +323,17 @@ A simple wrapper for an indirect likelihood problem.
 The *log_prior* is a callable that returns the log prior for a set of structural
 parameters ``θ``.
 
-A *structural model* and a set of parameters ``θ`` are sufficient to generate
-*simulated data*, by implementing a method for [`simulate_data(model,
-θ)`](@ref). When applicable, independent variables necessary for simulation
-should be included in the *structural model*.
+A *structural model*, common random variables ``ϵ``, and a set of parameters
+``θ`` are sufficient to generate *simulated data*, by implementing a method for
+[`simulate_data`](@ref). When applicable, independent variables necessary for
+simulation should be included in the *structural model*.
+
+*Common random variables* are a set of random variables that can be re-used for
+for simulation with different parameter values. [`random_crv`] should yield an
+initial value (usually an `Array` or a collection of similar structures), while
+[`random_crv!`](@ref) should be able to update this in place. The latter is used
+primarily for indirect loglikelihood calculations. When the model does not admit
+common random variables, use `nothing`.
 
 An *auxiliary model* is a simpler model for which we can calculate the
 likelihood. Given simulated data `x`, a maximum likelihood parameter estimate
@@ -319,27 +349,57 @@ default callable method does this.
 The user should implement [`simulate_data`](@ref), [`MLE`](@ref), and
 [`loglikelihood`](@ref), with the signatures above.
 """
-struct IndirectLikelihoodProblem{P, S, A, D} <: AbstractIndirectLikelihoodProblem
+struct IndirectLikelihoodProblem{P, S, E, A, D} <: AbstractIndirectLikelihoodProblem
     log_prior::P
     structural_model::S
+    common_random_variables::E
     auxiliary_model::A
     observed_data::D
 end
 
 """
-    simulate_data(structural_model, θ)
+    $SIGNATURES
 
-Simulate data from the `structural_model` with the given parameters ``θ``.
+Simulate data from the `structural_model` using the common random variables `ϵ`,
+with the given parameters `θ`.
 
 Methods should be defined by the user for each `structural_model` type. The
 function should return simulated `data` in the format that can be used by
-`MLE(auxiliary_model, data)`. For infeasible/meaningless parameters, `nothing`
-should be returned.
+`MLE(auxiliary_model, data)`.
+
+For infeasible/meaningless parameters, `nothing` should be returned.
 """
-function simulate_data end
+@no_method_info simulate_data(structural_model, ϵ, θ)
 
 """
-    MLE(auxiliary_model, data)
+    $SIGNATURES
+
+Return a container of common random variables that can be reused by
+[`simulate_data`](@ref) with different parameters.
+
+The returned value does not need to be a mutable type, but its contents need to
+be modifiable. A method for [`random_crv!`](@ref) should be defined which can
+update them.
+
+When the model structure does not allow common random variables, return
+`nothing`, which already has a fallback method for [`random_crv!`](@ref).
+"""
+@no_method_info random_crv(model)
+
+"""
+    $SIGNATURES
+
+Update the common random variables `ϵ` for the `model`.
+"""
+@no_method_info random_crv!(model, ϵ)
+
+random_crv!(::Any, ::Void) = nothing
+
+random_crv!(problem::IndirectLikelihoodProblem) =
+    random_crv!(problem.model, problem.common_random_variables)
+
+"""
+    $SIGNATURES
 
 Maximum likelihood estimate for the auxiliary model with `data`.
 
@@ -347,6 +407,8 @@ Methods should be defined by the user for each `auxiliary_model` type. A
 fallback method is defined for `nothing` as data (infeasible parameters). See
 also [`simulate_data`](@ref).
 """
+@no_method_info MLE(auxiliary_model, data)
+
 MLE(::Any, ::Void) = nothing
 
 """
@@ -359,8 +421,8 @@ This is also known the *mapping* or *binding function* in the indirect inference
 literature.
 """
 function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
-    @unpack structural_model, auxiliary_model = problem
-    x = simulate_data(structural_model, θ)
+    @unpack structural_model, common_random_variables, auxiliary_model = problem
+    x = simulate_data(structural_model, common_random_variables, θ)
     MLE(auxiliary_model, x)
 end
 
@@ -383,8 +445,9 @@ parameters `θ`.
 
 Useful for debugging and exploration of identification with simulated data.
 """
-function simulate_problem(log_prior, structural_model, auxiliary_model, θ)
-    IndirectLikelihoodProblem(log_prior, structural_model, auxiliary_model,
+function simulate_problem(log_prior, structural_model, auxiliary_model, θ;
+                          ϵ = random_crv(structural_model))
+    IndirectLikelihoodProblem(log_prior, structural_model, ϵ, auxiliary_model,
                               simulate_data(structural_model, θ))
 end
 
