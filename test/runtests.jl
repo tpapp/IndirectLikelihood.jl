@@ -1,10 +1,6 @@
 using IndirectLikelihood
 
 using IndirectLikelihood:
-    # multivariate normal
-    MvNormalModel, MvNormalData, MvNormalParams,
-    # OLS
-    OLSModel, OLSData, OLSParams, add_intercept,
     # imported for testing
     vec_parameters
 

@@ -19,7 +19,8 @@ export
     IndirectLikelihoodProblem, simulate_problem, local_jacobian, simulate_data,
     random_crn, random_crn!,
     # specific auxiliary models and utilities
-    MvNormalModel, OLSModel, add_intercept
+    MvNormalModel, MvNormalData, MvNormalParams,
+    OLSModel, OLSData, OLSParams, add_intercept
 
 
 # utilities
