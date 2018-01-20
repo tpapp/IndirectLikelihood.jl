@@ -135,6 +135,10 @@ end
         @test loglikelihood(OLSModel(), data, OLSParams(B′, Σ′)) ≈
             loglikelihood(MvNormal(zeros(m), Σ′), (Y - X * B′)')
     end
+    # corner case: zero estimated variance matrix
+    params2 = MLE(OLSModel(), data)
+    params2.Σ .= 0
+    @test loglikelihood(OLSModel(), data, params2) == -Inf
 end
 
 @testset "adding intercept" begin
@@ -210,4 +214,8 @@ simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
     # local jacobian
     parameter_transformation = TransformationTuple((IDENTITY, ))
     local_jacobian(p, (2.0, ), parameter_transformation)
+end
+
+@testset "no common random numbers" begin
+    @test (random_crn!("something", nothing); true)
 end

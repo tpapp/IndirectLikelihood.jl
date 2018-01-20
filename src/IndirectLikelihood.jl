@@ -293,6 +293,9 @@ function _logpdf_normal(X::AbstractMatrix{TX},
         A = X / U
         -0.5 * (n*(m*log(2*π) + 2*logdet(U)) + sum(abs2, A))
     catch
+        # NOTE: technically, should check for X=0 in this case, but that almost
+        # never happens and would need to throw an error, -Inf rejects without a
+        # hassle too
         convert(promote_type(TX, TΣ), -Inf)
     end
 end
