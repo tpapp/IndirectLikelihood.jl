@@ -13,10 +13,13 @@ using StatsBase: mean_and_cov, AbstractWeights
 import StatsBase: loglikelihood
 
 export
-    MLE, indirect_loglikelihood, loglikelihood, simulate_data,
-    add_intercept,
-    IndirectLikelihoodProblem, simulate_problem, local_jacobian, random_crv,
-    random_crv!
+    # general interface
+    MLE, indirect_loglikelihood, loglikelihood,
+    # modeling API
+    IndirectLikelihoodProblem, simulate_problem, local_jacobian, simulate_data,
+    random_crn, random_crn!,
+    # specific auxiliary models and utilities
+    MvNormalModel, OLSModel, add_intercept
 
 
 # utilities
@@ -34,7 +37,7 @@ macro no_method_info(ex)
     quote
         function $f($(args...))
             info($msg)
-            MethodError($f, $(args...))
+            MethodError($f, ($(args...)))
         end
     end
 end
@@ -43,17 +46,24 @@ end
 # general interface
 
 """
-    MLE(data)
+    $SIGNATURES
 
-Return the maximum likelihood of the parameters using the given data, using a
-model determined by its type. See also [`loglikelihood`](@ref).
+Return the maximum likelihood of the parameters for `data` in `model`. See also
+the 3-parameter version of [`loglikelihood`](@ref) in this package.
 """
-@no_method_info MLE(data)
+@no_method_info MLE(model, data)
 
 """
-    indirect_loglikelihood(y, x)
+    $SIGNATURES
 
-1. estimate the model from summary statistics `x` using maximum likelihood,
+Log likelihood of `data` under `model` with `parameters`.
+"""
+@no_method_info loglikelihood(model, data, parameters)
+
+"""
+    indirect_loglikelihood(model, y, x)
+
+1. estimate `model` from summary statistics `x` using maximum likelihood,
 
 2. return the likelihood of summary_statistics `y` under the estimated
 parameters.
@@ -69,10 +79,16 @@ and `x` the simulated data. See in particular
   inference using a parametric auxiliary model. Statistical Science, 30(1),
   72–95.
 """
-indirect_loglikelihood(y, x) = loglikelihood(y, MLE(x))
+indirect_loglikelihood(model, y, x) = loglikelihood(model, y, MLE(model, x))
 
 
 # model: multivariate normal
+
+"""
+Model observations as drawn from a multivariate normal distribution. See
+`MvNormalData` for summarizing data for estimation and likelihood calculations.
+"""
+struct MvNormalModel end
 
 """
     $SIGNATURES
@@ -85,29 +101,29 @@ function is_conformable_square(vector::AbstractVector, matrix::AbstractMatrix)
 end
 
 """
-    MvNormal_SS(n, m, S)
+    MvNormalData(n, m, S)
 
 Multivariate normal model summary statistics with `n` observations, mean `m` and
 sample covariance `S`. Only saves the summary statistics.
 """
-struct MvNormal_SS{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
+struct MvNormalData{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
     "sum of the weights (alternatively, total number of observations)"
     W::TW
     "(weighted) sample mean"
     m::Tm
     "(weighted) sample covariance matrix"
     S::TS
-    function MvNormal_SS(W::TW, m::Tm, S::TS) where {TW <: Real,
-                                                    Tm <: AbstractVector,
-                                                    TS <: AbstractMatrix}
+    function MvNormalData(W::TW, m::Tm, S::TS) where {TW <: Real,
+                                                      Tm <: AbstractVector,
+                                                      TS <: AbstractMatrix}
         @argcheck is_conformable_square(m, S)
         new{TW, Tm, TS}(W, m, S)
     end
 end
 
-size(ss::MvNormal_SS) = ss.W, length(ss.m)
+size(ss::MvNormalData) = ss.W, length(ss.m)
 
-function show(io::IO, ss::MvNormal_SS)
+function show(io::IO, ss::MvNormalData)
     W, k = size(ss)
     print(io, "Summary statistics for multivariate normal, $(W) × $(k) samples")
 end
@@ -118,9 +134,9 @@ end
 Multivariate normal summary statistics from observations (each row of `X` is an
 observation).
 """
-function MvNormal_SS(X::AbstractMatrix)
+function MvNormalData(X::AbstractMatrix)
     m, S = mean_and_cov(X, 1; corrected = false)
-    MvNormal_SS(size(X, 1), vec(m), S)
+    MvNormalData(size(X, 1), vec(m), S)
 end
 
 """
@@ -129,40 +145,30 @@ end
 Multivariate normal summary statistics from observations (each row of `X` is an
 observation), with weights.
 """
-function MvNormal_SS(X::AbstractMatrix, wv::AbstractWeights)
+function MvNormalData(X::AbstractMatrix, wv::AbstractWeights)
     m, S = mean_and_cov(X, wv, 1; corrected = false)
-    MvNormal_SS(sum(wv), vec(m), S)
+    MvNormalData(sum(wv), vec(m), S)
 end
 
 """
-    MvNormal_Params(μ, Σ)
+    MvNormalParams(μ, Σ)
 
 Parameters for the multivariate normal model ``x ∼ MvNormal(μ, Σ)``.
 """
-struct MvNormal_Params{Tμ, TΣ}
+struct MvNormalParams{Tμ, TΣ}
     "mean"
     μ::Tμ
     "variance"
     Σ::TΣ
-    function MvNormal_Params(μ::Tμ, Σ::TΣ) where {Tμ, TΣ}
+    function MvNormalParams(μ::Tμ, Σ::TΣ) where {Tμ, TΣ}
         @argcheck is_conformable_square(μ, Σ)
         new{Tμ, TΣ}(μ, Σ)
     end
 end
 
-MLE(ss::MvNormal_SS) = MvNormal_Params(ss.m, ss.S)
+MLE(::MvNormalModel, ss::MvNormalData) = MvNormalParams(ss.m, ss.S)
 
-# NOTE: documenting this here, since the generic function is defined in another
-# package
-"""
-    loglikelihood(data, params)
-
-Return the log likelihood of the `data` under parameters `params`, which come
-from the same model family.
-
-`loglikelihood(data, MLE(data))` maximizes the loglikelihood for given `data`.
-"""
-function loglikelihood(ss::MvNormal_SS, params::MvNormal_Params)
+function loglikelihood(::MvNormalModel, ss::MvNormalData, params::MvNormalParams)
     @unpack W, m, S = ss
     @unpack μ, Σ = params
     K = length(m)
@@ -176,7 +182,13 @@ end
 # OLS
 
 """
-    OLS_Data(Y, X)
+Model data with a scalar- or vector-valued ordinary least squares regression.
+See [`OLSData`](@ref) for wrapping data.
+"""
+struct OLSModel end
+
+"""
+    OLSData(Y, X)
 
 Ordinary least squares with dependent variable `Y` and design matrix `X`.
 
@@ -190,43 +202,43 @@ variance matrix ``Σ`` (multivariate linear regression), or
 matrix, `β` is a parameter vector of `k` elements, and `ϵᵢ ∼ N(0, σ)` where `σ`
 is the variance of the normal error.
 
-See [`OLS_Params`](@ref) for the parameters.
+See [`OLSParams`](@ref) for the parameters.
 """
-struct OLS_Data{TY <: Union{AbstractMatrix, AbstractVector},
-                TX <: AbstractMatrix}
+struct OLSData{TY <: Union{AbstractMatrix, AbstractVector},
+               TX <: AbstractMatrix}
     Y::TY
     X::TX
-    function OLS_Data(Y::TY, X::TX) where {TY, TX}
+    function OLSData(Y::TY, X::TX) where {TY, TX}
         @argcheck size(Y, 1) == size(X, 1)
         new{TY, TX}(Y, X)
     end
 end
 
-function show(io::IO, data::OLS_Data{<:AbstractVector})
+function show(io::IO, data::OLSData{<:AbstractVector})
     n, k = size(data.X)
     print(io, "OLS regression data, $(n) scalar observations, $(k) covariates")
 end
 
-function show(io::IO, data::OLS_Data{<:AbstractMatrix})
+function show(io::IO, data::OLSData{<:AbstractMatrix})
     n, k = size(data.X)
     m = size(data.Y, 2)
     print(io, "OLS regression data, $(n) vector observations of length $(m), $(k) covariates")
 end
 
 """
-    OLS_Params(B, Σ)
+    OLSParams(B, Σ)
 
 Maximum likelihood estimated parameters for an OLS regression. See
-[`OLS_Data`](@ref).
+[`OLSData`](@ref).
 """
-struct OLS_Params{TB <: Union{AbstractMatrix, AbstractVector},
+struct OLSParams{TB <: Union{AbstractMatrix, AbstractVector},
                   TΣ <: Union{<:Real, AbstractMatrix}}
     B::TB
     Σ::TΣ
-    function OLS_Params(B::TB, Σ::TΣ) where {TB <: AbstractVector, TΣ <: Real}
+    function OLSParams(B::TB, Σ::TΣ) where {TB <: AbstractVector, TΣ <: Real}
         new{TB, TΣ}(B, Σ)
     end
-    function OLS_Params(B::TB, Σ::TΣ) where {TB <: AbstractMatrix,
+    function OLSParams(B::TB, Σ::TΣ) where {TB <: AbstractMatrix,
                                              TΣ <: AbstractMatrix}
         m = size(B, 2)
         @argcheck size(Σ) == (m, m)
@@ -234,26 +246,26 @@ struct OLS_Params{TB <: Union{AbstractMatrix, AbstractVector},
     end
 end
 
-function show(io::IO, params::OLS_Params{<:AbstractVector})
+function show(io::IO, params::OLSParams{<:AbstractVector})
     k = length(params.B)
     print(io, "OLS regression parameters, $(k) covariates")
 end
 
-function show(io::IO, params::OLS_Params{<:AbstractMatrix})
+function show(io::IO, params::OLSParams{<:AbstractMatrix})
     k, m = size(params.B)
     print(io, "OLS regression parameters, vector observations of length $(m), $(k) covariates")
 end
 
-function MLE(data::OLS_Data)
+function MLE(::OLSModel, data::OLSData)
     @unpack Y, X = data
     B = qrfact(X, Val{true}) \ Y
     E = Y - X*B
     Σ = E'*E / size(X, 1)
-    OLS_Params(B, Σ)
+    OLSParams(B, Σ)
 end
 
-function loglikelihood(data::OLS_Data{<: AbstractVector},
-                       params::OLS_Params{<: AbstractVector})
+function loglikelihood(::OLSModel, data::OLSData{<: AbstractVector},
+                       params::OLSParams{<: AbstractVector})
     @unpack Y, X = data
     @unpack B, Σ = params
     n = length(Y)
@@ -284,8 +296,8 @@ function _logpdf_normal(X::AbstractMatrix{TX},
     end
 end
 
-function loglikelihood(data::OLS_Data{<: AbstractMatrix},
-                       params::OLS_Params{<: AbstractMatrix})
+function loglikelihood(::OLSModel, data::OLSData{<: AbstractMatrix},
+                       params::OLSParams{<: AbstractMatrix})
     @unpack Y, X = data
     @unpack B, Σ = params
     n, m = size(Y)
@@ -323,17 +335,17 @@ A simple wrapper for an indirect likelihood problem.
 The *log_prior* is a callable that returns the log prior for a set of structural
 parameters ``θ``.
 
-A *structural model*, common random variables ``ϵ``, and a set of parameters
-``θ`` are sufficient to generate *simulated data*, by implementing a method for
+A *structural model*, common random numbers ``ϵ``, and a set of parameters ``θ``
+are sufficient to generate *simulated data*, by implementing a method for
 [`simulate_data`](@ref). When applicable, independent variables necessary for
 simulation should be included in the *structural model*.
 
-*Common random variables* are a set of random variables that can be re-used for
-for simulation with different parameter values. [`random_crv`] should yield an
+*Common random numbers* are a set of random numbers that can be re-used for for
+simulation with different parameter values. [`random_crn`] should yield an
 initial value (usually an `Array` or a collection of similar structures), while
-[`random_crv!`](@ref) should be able to update this in place. The latter is used
+[`random_crn!`](@ref) should be able to update this in place. The latter is used
 primarily for indirect loglikelihood calculations. When the model does not admit
-common random variables, use `nothing`.
+common random numbers, use `nothing`.
 
 An *auxiliary model* is a simpler model for which we can calculate the
 likelihood. Given simulated data `x`, a maximum likelihood parameter estimate
@@ -352,7 +364,7 @@ The user should implement [`simulate_data`](@ref), [`MLE`](@ref), and
 struct IndirectLikelihoodProblem{P, S, E, A, D} <: AbstractIndirectLikelihoodProblem
     log_prior::P
     structural_model::S
-    common_random_variables::E
+    common_random_numbers::E
     auxiliary_model::A
     observed_data::D
 end
@@ -360,8 +372,9 @@ end
 """
     $SIGNATURES
 
-Simulate data from the `structural_model` using the common random variables `ϵ`,
-with the given parameters `θ`.
+Simulate data from the `structural_model` with the given parameters `θ`. Common
+random numbers `ϵ` are used when provided, otherwise generated using
+[`random_crv`](@ref).
 
 Methods should be defined by the user for each `structural_model` type. The
 function should return simulated `data` in the format that can be used by
@@ -369,34 +382,34 @@ function should return simulated `data` in the format that can be used by
 
 For infeasible/meaningless parameters, `nothing` should be returned.
 """
-@no_method_info simulate_data(structural_model, ϵ, θ)
+@no_method_info simulate_data(structural_model, θ, ϵ)
 
 """
     $SIGNATURES
 
-Return a container of common random variables that can be reused by
+Return a container of common random numbers that can be reused by
 [`simulate_data`](@ref) with different parameters.
 
 The returned value does not need to be a mutable type, but its contents need to
-be modifiable. A method for [`random_crv!`](@ref) should be defined which can
+be modifiable. A method for [`random_crn!`](@ref) should be defined which can
 update them.
 
-When the model structure does not allow common random variables, return
-`nothing`, which already has a fallback method for [`random_crv!`](@ref).
+When the model structure does not allow common random numbers, return
+`nothing`, which already has a fallback method for [`random_crn!`](@ref).
 """
-@no_method_info random_crv(model)
+@no_method_info random_crn(model)
 
 """
     $SIGNATURES
 
-Update the common random variables `ϵ` for the `model`.
+Update the common random numbers `ϵ` for the `model`.
 """
-@no_method_info random_crv!(model, ϵ)
+@no_method_info random_crn!(model, ϵ)
 
-random_crv!(::Any, ::Void) = nothing
+random_crn!(::Any, ::Void) = nothing
 
-random_crv!(problem::IndirectLikelihoodProblem) =
-    random_crv!(problem.model, problem.common_random_variables)
+random_crn!(problem::IndirectLikelihoodProblem) =
+    random_crn!(problem.model, problem.common_random_numbers)
 
 """
     $SIGNATURES
@@ -421,8 +434,8 @@ This is also known the *mapping* or *binding function* in the indirect inference
 literature.
 """
 function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
-    @unpack structural_model, common_random_variables, auxiliary_model = problem
-    x = simulate_data(structural_model, common_random_variables, θ)
+    @unpack structural_model, common_random_numbers, auxiliary_model = problem
+    x = simulate_data(structural_model, θ, common_random_numbers)
     MLE(auxiliary_model, x)
 end
 
@@ -446,9 +459,9 @@ parameters `θ`.
 Useful for debugging and exploration of identification with simulated data.
 """
 function simulate_problem(log_prior, structural_model, auxiliary_model, θ;
-                          ϵ = random_crv(structural_model))
+                          ϵ = random_crn(structural_model))
     IndirectLikelihoodProblem(log_prior, structural_model, ϵ, auxiliary_model,
-                              simulate_data(structural_model, θ))
+                              simulate_data(structural_model, θ, ϵ))
 end
 
 
@@ -517,7 +530,7 @@ vec_parameters(A::Union{Symmetric, UpperTriangular}) = vec_upper(A)
 
 vec_parameters(A::LowerTriangular) = vec_lower(A)
 
-vec_parameters(ϕ::OLS_Params) = vec_parameters(ϕ.B, ϕ.Σ)
+vec_parameters(ϕ::OLSParams) = vec_parameters(ϕ.B, ϕ.Σ)
 
 """
     $SIGNATURES

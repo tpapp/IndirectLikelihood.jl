@@ -2,67 +2,72 @@ using IndirectLikelihood
 
 using IndirectLikelihood:
     # multivariate normal
-    MvNormal_SS, MvNormal_Params,
+    MvNormalModel, MvNormalData, MvNormalParams,
     # OLS
-    OLS_Data, OLS_Params, add_intercept,
+    OLSModel, OLSData, OLSParams, add_intercept,
     # imported for testing
     vec_parameters
+
+import IndirectLikelihood:
+    # problem API
+    simulate_data, random_crn, random_crn!, MLE, loglikelihood
 
 using Base.Test
 
 using StatsBase: Weights, loglikelihood
 using Distributions: logpdf, Normal, MvNormal
+using Optim
 
-@testset "MvNormal_SS summary statistics and MLE" begin
+@testset "MvNormalData summary statistics and MLE" begin
     for _ in 1:100
         K = rand(5:10)
         N = K + rand(10:100)
         X = randn(N, K)
-        mvn = MvNormal_SS(X)
+        mvn = MvNormalData(X)
         @test mvn.W == N
         @test size(mvn.m) == (K, )
         @test mvn.m ≈ vec(mean(X, 1))
         Xc = X .- mvn.m'
         @test mvn.S ≈ (Xc'*Xc)/N
-        @test MLE(mvn) == MvNormal_Params(mvn.m, mvn.S)
+        @test MLE(MvNormalModel(), mvn) == MvNormalParams(mvn.m, mvn.S)
         @test size(mvn) == (N, K)
         @test repr(mvn) ==
             "Summary statistics for multivariate normal, $(N) × $(K) samples"
     end
 end
 
-@testset "MvNormal_SS summary statistics and MLE (weighted)" begin
+@testset "MvNormalData summary statistics and MLE (weighted)" begin
     for _ in 1:100
         K = rand(5:10)
         N = K + rand(10:100)
         X = randn(N, K)
         wv = Weights(abs.(randn(N)))
         W = sum(wv)
-        mvn = MvNormal_SS(X, wv)
+        mvn = MvNormalData(X, wv)
         @test mvn.W == W
         @test size(mvn.m) == (K, )
         @test mvn.m ≈ vec(mean(X, wv, 1))
         Xc = X .- mvn.m'
         @test mvn.S ≈ ((values(wv).*Xc)'*Xc)/W
-        @test MLE(mvn) == MvNormal_Params(mvn.m, mvn.S)
+        @test MLE(MvNormalModel(), mvn) == MvNormalParams(mvn.m, mvn.S)
         @test size(mvn) == (W, K)
         @test repr(mvn) ==
             "Summary statistics for multivariate normal, $(sum(wv)) × $(K) samples"
     end
 end
 
-@testset "MvNormal_SS log likelihood" begin
+@testset "MvNormalData log likelihood" begin
     for _ in 1:100
         K = rand(5:10)
         N = K + rand(10:100)
         X = randn(2*N, K)
-        mvnX = MvNormal_SS(X)
-        paramsX = MLE(mvnX)
+        mvnX = MvNormalData(X)
+        paramsX = MLE(MvNormalModel(), mvnX)
         Y = randn(N, K)
-        mvnY = MvNormal_SS(Y)
+        mvnY = MvNormalData(Y)
         ℓ = sum(logpdf(MvNormal(paramsX.μ, paramsX.Σ), Y'))
-        @test ℓ ≈ loglikelihood(mvnY, paramsX)
-        @test ℓ ≈ indirect_loglikelihood(mvnY, mvnX)
+        @test ℓ ≈ loglikelihood(MvNormalModel(), mvnY, paramsX)
+        @test ℓ ≈ indirect_loglikelihood(MvNormalModel(), mvnY, mvnX)
     end
 end
 
@@ -73,18 +78,18 @@ end
         X = randn(n, k)
         β = randn(k)
         Y = X * β + randn(n)
-        data = OLS_Data(Y, X)
+        data = OLSData(Y, X)
         @test repr(data) ==
             "OLS regression data, $(n) scalar observations, $(k) covariates"
-        @test_throws ArgumentError OLS_Data(randn(n+1), X)
-        params = MLE(data)
+        @test_throws ArgumentError OLSData(randn(n+1), X)
+        params = MLE(OLSModel(), data)
         @test repr(params) == "OLS regression parameters, $(k) covariates"
         @test params.B ≈ (X \ Y)
         @test params.Σ ≈ sum(abs2, Y - X * (X \ Y)) / n
         for _ in 1:10
             β′ = randn(k)
             Σ′ = abs(randn()) + 1
-            @test loglikelihood(data, OLS_Params(β′, Σ′)) ≈
+            @test loglikelihood(OLSModel(), data, OLSParams(β′, Σ′)) ≈
                 sum(logpdf.(Normal(0, √Σ′), Y - X * β′))
         end
     end
@@ -98,11 +103,11 @@ end
     X = randn(n, k)
     B = randn(k, m)
     Y = X * B + randn(n, m) * A
-    data = OLS_Data(Y, X)
+    data = OLSData(Y, X)
     @test repr(data) ==
         "OLS regression data, $(n) vector observations of length $(m), $(k) covariates"
-    @test_throws ArgumentError OLS_Data(randn(n+1, ), X)
-    params = MLE(data)
+    @test_throws ArgumentError OLSData(randn(n+1, ), X)
+    params = MLE(OLSModel(), data)
     @test repr(params) ==
         "OLS regression parameters, vector observations of length $(m), $(k) covariates"
     @test params.B ≈ (X \ Y)
@@ -112,7 +117,7 @@ end
         B′ = randn(k, m)
         A′ = randn(m, m)
         Σ′ = A′' * A′           # ensures PSD
-        @test loglikelihood(data, OLS_Params(B′, Σ′)) ≈
+        @test loglikelihood(OLSModel(), data, OLSParams(B′, Σ′)) ≈
             loglikelihood(MvNormal(zeros(m), Σ′), (Y - X * B′)')
     end
 end
@@ -141,9 +146,41 @@ end
 @testset "vectorizing parameters (OLS)" begin
     b = randn(rand(3:10))
     σ² = abs(randn())
-    @test vec_parameters(OLS_Params(b, σ²)) == vcat(b, σ²)
+    @test vec_parameters(OLSParams(b, σ²)) == vcat(b, σ²)
     B = randn(10, 3)
     Σ = randn(3, 3) |> x->x*x'
-    @test vec_parameters(OLS_Params(B, Σ)) == vcat(vec_parameters(B),
-                                                   vec_parameters(Σ))
+    @test vec_parameters(OLSParams(B, Σ)) == vcat(vec_parameters(B),
+                                                  vec_parameters(Σ))
+end
+
+
+# problem API
+
+"""
+Observations from `Normal(μ, 1)` with an unknown `μ`, estimated using a
+multivatiate normal auxiliary model (so in this case, the likelihood is exact
+and the summary statistics lose no information).
+"""
+struct NormalMeanModel
+    "number of observations"
+    N::Int
+end
+
+random_crn(model::NormalMeanModel) = randn(model.N)
+
+random_crn!(model::NormalMeanModel, ϵ) = randn!(ϵ)
+
+function simulate_data(model::NormalMeanModel, θ, ϵ)
+    μ = θ[1]
+    MvNormalData(reshape(μ .+ ϵ, :, 1))
+end
+
+@testset "indirect likelihood toy problem" begin
+    μ₀ = 2.0
+    p = simulate_problem(x -> zero(x), NormalMeanModel(100),
+                         MvNormalModel(), [μ₀])
+    f(x) = (-p([x]))[1]
+    o = optimize(f, 0.0, 4.0)
+    μ₁ = Optim.minimizer(o)
+    @test μ₁ ≈ μ₀
 end
