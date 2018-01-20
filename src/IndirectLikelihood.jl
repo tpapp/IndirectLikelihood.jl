@@ -397,19 +397,19 @@ update them.
 When the model structure does not allow common random numbers, return
 `nothing`, which already has a fallback method for [`random_crn!`](@ref).
 """
-@no_method_info random_crn(model)
+@no_method_info random_crn(structural_model)
 
 """
     $SIGNATURES
 
-Update the common random numbers `ϵ` for the `model`.
+Update the common random numbers for the model.
 """
-@no_method_info random_crn!(model, ϵ)
+@no_method_info random_crn!(structural_model, ϵ)
 
 random_crn!(::Any, ::Void) = nothing
 
 random_crn!(problem::IndirectLikelihoodProblem) =
-    random_crn!(problem.model, problem.common_random_numbers)
+    random_crn!(problem.structural_model, problem.common_random_numbers)
 
 """
     $SIGNATURES

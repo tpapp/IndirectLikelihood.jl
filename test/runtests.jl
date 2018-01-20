@@ -179,8 +179,12 @@ end
     μ₀ = 2.0
     p = simulate_problem(x -> zero(x), NormalMeanModel(100),
                          MvNormalModel(), [μ₀])
+    # find the optimum using the same common random numbers
     f(x) = (-p([x]))[1]
     o = optimize(f, 0.0, 5.0)
     μ₁ = Optim.minimizer(o)
     @test μ₁ ≈ μ₀ atol = 1e-4
+    # test common random numbers updating
+    @test mean([(random_crn!(p);
+                 mean(p.common_random_numbers)) for _ in 1:1000]) ≈ 0 atol = 0.01
 end
