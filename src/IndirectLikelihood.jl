@@ -32,12 +32,12 @@ Informative error message for missing method.
 macro no_method_info(ex)
     @capture(ex, f_(args__)) || error("Expected a function name with arguments")
     msg = "You need to define `$(string(f))` with this model type."
-    f = esc(f)
-    args = map(esc, args)
+    esc_f = esc(f)
+    esc_args = map(esc, args)
     quote
-        function $f($(args...))
+        function $esc_f($(esc_args...))
             info($msg)
-            MethodError($f, ($(args...)))
+            MethodError($esc_f, ($(esc_args...)))
         end
     end
 end
