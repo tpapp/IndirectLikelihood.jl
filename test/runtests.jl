@@ -182,5 +182,5 @@ end
     f(x) = (-p([x]))[1]
     o = optimize(f, 0.0, 4.0)
     μ₁ = Optim.minimizer(o)
-    @test μ₁ ≈ μ₀
+    @test μ₁ ≈ μ₀ atol = 1e-4
 end
