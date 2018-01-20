@@ -381,13 +381,15 @@ Simulate data from the `structural_model` with the given parameters `θ`. Common
 random numbers `ϵ` are used when provided, otherwise generated using
 [`random_crv`](@ref).
 
-Methods should be defined by the user for each `structural_model` type. The
-function should return simulated `data` in the format that can be used by
-`MLE(auxiliary_model, data)`.
-
-For infeasible/meaningless parameters, `nothing` should be returned.
+Three-argument methods should be defined by the user for each `structural_model`
+type. The function should return simulated `data` in the format that can be used
+by `MLE(auxiliary_model, data)`. For infeasible/meaningless parameters,
+`nothing` should be returned.
 """
 @no_method_info simulate_data(structural_model, θ, ϵ)
+
+simulate_data(structural_model, θ) =
+    simulate_data(structural_model, θ, random_crn(structural_model))
 
 """
     $SIGNATURES
