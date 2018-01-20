@@ -180,7 +180,7 @@ end
     p = simulate_problem(x -> zero(x), NormalMeanModel(100),
                          MvNormalModel(), [μ₀])
     f(x) = (-p([x]))[1]
-    o = optimize(f, 0.0, 4.0)
+    o = optimize(f, 0.0, 5.0)
     μ₁ = Optim.minimizer(o)
     @test μ₁ ≈ μ₀ atol = 1e-4
 end
