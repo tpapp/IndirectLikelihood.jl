@@ -18,6 +18,20 @@ using ContinuousTransformations
 using Distributions: logpdf, Normal, MvNormal
 using Optim
 using StatsBase: Weights, loglikelihood
+using Suppressor
+
+
+# test utilities
+
+@testset "fallback methods" begin
+    output = @capture_err begin
+        @test_throws MethodError MLE("something", "nonsensical")
+    end
+    @test contains(output, "You need to define `MLE` with this model type.")
+end
+
+
+# test auxiliary model building blocks
 
 @testset "MvNormalData summary statistics and MLE" begin
     for _ in 1:100

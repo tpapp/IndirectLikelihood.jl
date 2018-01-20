@@ -37,7 +37,8 @@ macro no_method_info(ex)
     quote
         function $esc_f($(esc_args...))
             info($msg)
-            MethodError($esc_f, ($(esc_args...)))
+            throw(MethodError($esc_f,
+                              Tuple{$(map(e -> :(typeof($e)), esc_args)...)}))
         end
     end
 end
