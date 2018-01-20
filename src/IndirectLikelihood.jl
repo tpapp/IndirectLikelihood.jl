@@ -482,8 +482,6 @@ vec_parameters(x::Real) = [x]
 
 vec_parameters(xs::Tuple) = vcat(map(vec_parameters, xs)...)
 
-vec_parameters(xs...) = vec_parameters(xs)
-
 vec_parameters(A::AbstractArray) = vec(A)
 
 """
@@ -530,7 +528,9 @@ vec_parameters(A::Union{Symmetric, UpperTriangular}) = vec_upper(A)
 
 vec_parameters(A::LowerTriangular) = vec_lower(A)
 
-vec_parameters(ϕ::OLSParams) = vec_parameters(ϕ.B, ϕ.Σ)
+vec_parameters(ϕ::OLSParams) = vec_parameters((ϕ.B, ϕ.Σ))
+
+vec_parameters(ϕ::MvNormalParams) = vec_parameters((ϕ.μ, ϕ.Σ))
 
 """
     $SIGNATURES

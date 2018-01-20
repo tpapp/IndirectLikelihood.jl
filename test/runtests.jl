@@ -14,9 +14,10 @@ import IndirectLikelihood:
 
 using Base.Test
 
-using StatsBase: Weights, loglikelihood
+using ContinuousTransformations
 using Distributions: logpdf, Normal, MvNormal
 using Optim
+using StatsBase: Weights, loglikelihood
 
 @testset "MvNormalData summary statistics and MLE" begin
     for _ in 1:100
@@ -175,6 +176,8 @@ function simulate_data(model::NormalMeanModel, θ, ϵ)
     MvNormalData(reshape(μ .+ ϵ, :, 1))
 end
 
+simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
+
 @testset "indirect likelihood toy problem" begin
     μ₀ = 2.0
     p = simulate_problem(x -> zero(x), NormalMeanModel(100),
@@ -187,4 +190,10 @@ end
     # test common random numbers updating
     @test mean([(random_crn!(p);
                  mean(p.common_random_numbers)) for _ in 1:1000]) ≈ 0 atol = 0.01
+
+    # invalid parameters: when data is nothing, indirect log likelihood is -Inf
+    @test p("a fish") == -Inf
+    # local jacobian
+    parameter_transformation = TransformationTuple((IDENTITY, ))
+    local_jacobian(p, (2.0, ), parameter_transformation)
 end
