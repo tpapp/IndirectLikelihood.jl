@@ -5,7 +5,7 @@
 [![Coverage Status](https://coveralls.io/repos/tpapp/IndirectLikelihood.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/tpapp/IndirectLikelihood.jl?branch=master)
 [![codecov.io](http://codecov.io/github/tpapp/IndirectLikelihood.jl/coverage.svg?branch=master)](http://codecov.io/github/tpapp/IndirectLikelihood.jl?branch=master)
 
-Utilities for indirect likelihood estimation using summary statistics.
+Framework for indirect likelihood estimation (primarily for using Bayesian methods).
 
 **Work in progress.** Will be documented when API stabilizes, until
 then, see the unit tests and the references below.
