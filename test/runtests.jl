@@ -13,7 +13,7 @@ using Base.Test
 using ContinuousTransformations
 using Distributions: logpdf, Normal, MvNormal
 using Optim
-using StatsBase: Weights, loglikelihood
+using StatsBase: Weights
 using Suppressor
 
 
@@ -129,7 +129,7 @@ end
         A′ = randn(m, m)
         Σ′ = A′' * A′           # ensures PSD
         @test loglikelihood(OLSModel(), data, OLSParams(B′, Σ′)) ≈
-            loglikelihood(MvNormal(zeros(m), Σ′), (Y - X * B′)')
+            StatsBase.loglikelihood(MvNormal(zeros(m), Σ′), (Y - X * B′)')
     end
     # corner case: zero estimated variance matrix
     params2 = MLE(OLSModel(), data)

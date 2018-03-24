@@ -2,8 +2,8 @@ export
     # general interface
     MLE, indirect_loglikelihood, loglikelihood,
     # modeling API
-    IndirectLikelihoodProblem, simulate_problem, local_jacobian, simulate_data,
-    random_crn, random_crn!
+    IndirectLikelihoodProblem, simulate_problem, loglikelihood, local_jacobian,
+    simulate_data, random_crn, random_crn!, vec_parameters
 
 """
     $SIGNATURES
@@ -25,8 +25,7 @@ Log likelihood of `data` under `model` with `parameters`.
 
 1. estimate `model` from summary statistics `x` using maximum likelihood,
 
-2. return the likelihood of summary_statistics `y` under the estimated
-parameters.
+2. return the likelihood of summary statistics `y` under the estimated parameters.
 
 Useful for pseudo-likelihood indirect inference, where `y` would be the observed
 and `x` the simulated data. See in particular
@@ -47,7 +46,7 @@ Abstract type for indirect likelihood problems.
 abstract type AbstractIndirectLikelihoodProblem end
 
 """
-    IndirectLikelihoodProblem(structural_model, auxiliary_model, observed_data)
+    IndirectLikelihoodProblem(log_prior, structural_model, auxiliary_model, observed_data)
 
 A simple wrapper for an indirect likelihood problem.
 
@@ -62,7 +61,7 @@ are sufficient to generate *simulated data*, by implementing a method for
 simulation should be included in the *structural model*.
 
 *Common random numbers* are a set of random numbers that can be re-used for for
-simulation with different parameter values. [`random_crn`] should yield an
+simulation with different parameter values. [`random_crn`](@ref) should yield an
 initial value (usually an `Array` or a collection of similar structures), while
 [`random_crn!`](@ref) should be able to update this in place. The latter is used
 primarily for indirect loglikelihood calculations. When the model does not admit

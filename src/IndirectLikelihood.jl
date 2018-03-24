@@ -10,7 +10,6 @@ using ForwardDiff: jacobian
 using MacroTools
 using Parameters: @unpack
 using StatsBase: mean_and_cov, AbstractWeights
-import StatsBase: loglikelihood
 
 include("utilities.jl")
 include("general.jl")
