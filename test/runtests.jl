@@ -6,7 +6,7 @@ using IndirectLikelihood:
 
 import IndirectLikelihood:
     # problem API
-    simulate_data, random_crn, random_crn!, MLE, loglikelihood
+    simulate_data, generate_crn, update_crn!, MLE, loglikelihood
 
 using Base.Test
 
@@ -181,9 +181,9 @@ struct NormalMeanModel
     N::Int
 end
 
-random_crn(model::NormalMeanModel) = randn(model.N)
+generate_crn(model::NormalMeanModel) = randn(model.N)
 
-random_crn!(model::NormalMeanModel, ϵ) = randn!(ϵ)
+update_crn!(model::NormalMeanModel, ϵ) = randn!(ϵ)
 
 function simulate_data(model::NormalMeanModel, θ, ϵ)
     μ = θ[1]
@@ -202,8 +202,7 @@ simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
     μ₁ = Optim.minimizer(o)
     @test μ₁ ≈ μ₀ atol = 1e-4
     # test common random numbers updating
-    @test mean([(random_crn!(p);
-                 mean(p.common_random_numbers)) for _ in 1:1000]) ≈ 0 atol = 0.01
+    @test mean([(update_crn!(p); mean(p.ϵ)) for _ in 1:1000]) ≈ 0 atol = 0.01
 
     # invalid parameters: when data is nothing, indirect log likelihood is -Inf
     @test p("a fish") == -Inf
@@ -213,5 +212,5 @@ simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
 end
 
 @testset "no common random numbers" begin
-    @test (random_crn!("something", nothing); true)
+    @test (update_crn!("something", nothing); true)
 end
