@@ -36,3 +36,16 @@ simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
     parameter_transformation = TransformationTuple((IDENTITY, ))
     @test local_jacobian(p, (2.0, ), parameter_transformation) == [1.0 0.0]'
 end
+
+struct ToyModel end
+
+common_random(rng::AbstractRNG, ::ToyModel) = 9.0
+
+simulate_data(rng::AbstractRNG, ::ToyModel, _) = 42
+
+@testset "simulation & CRN barebone" begin
+    @test common_random(RNG, ToyModel()) == 9.0
+    @test common_random!(RNG, ToyModel(), nothing) == 9.0 # fallback
+    @test simulate_data(RNG, ToyModel(), :parameter) == 42
+    @test simulate_data(ToyModel(), :parameter) == 42
+end

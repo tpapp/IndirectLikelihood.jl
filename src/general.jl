@@ -13,9 +13,13 @@ export
 """
     $SIGNATURES
 
-Simulate data from the `structural_model` with the given parameters `θ`. Common
-random numbers `ϵ` are used when provided, otherwise generated using
-[`common_random`](@ref).
+Simulate data from the `structural_model`
+
+1. using random number generator `rng`,
+
+2. with parameters `θ`,
+
+2. common random numbers `ϵ`.
 
 !!! usage
 
@@ -24,18 +28,36 @@ random numbers `ϵ` are used when provided, otherwise generated using
     format that can be used by [`MLE`](@ref) and [`loglikelihood`](@ref). For
     infeasible/meaningless parameters, `nothing` should be returned.
 """
-@no_method_info simulate_data(structural_model, θ, ϵ)
+simulate_data(rng::AbstractRNG, structural_model, θ, ϵ) =
+    no_model_method(simulate_data, rng, structural_model, θ, ϵ)
 
 """
-    simulate_data([rng], structural_model, θ)
+    $SIGNATURES
 
-Simulate data, generating `ϵ` using `rng`, which defaults to [`RNG`](@ref).
+Simulate data, generating `ϵ` using `rng`.
 
 See [`common_random`](@ref).
+
+!!! usage
+
+    For interactive/exploratory use. Models should define methods for
+    [`simulate_data(::AbsractRNG, ::Any, ::Any)`](@ref).
 """
 simulate_data(rng::AbstractRNG, structural_model, θ) =
-    simulate_data(structural_model, θ, common_random(rng, structural_model))
+    simulate_data(rng, structural_model, θ, common_random(rng, structural_model))
 
+"""
+   $SIGNATURES
+
+Simulate data, generating `ϵ` with the default random number generator.
+
+See [`common_random`](@ref).
+
+!!! usage
+
+    For interactive/exploratory use. Models should define methods for
+    [`simulate_data(::AbsractRNG, ::Any, ::Any)`](@ref).
+"""
 simulate_data(structural_model, θ) = simulate_data(RNG, structural_model, θ)
 
 """
@@ -55,8 +77,8 @@ The first argument is the random number generator.
 
 See also [`common_random!`](@ref) for further optimizations.
 """
-@no_method_info common_random(rng, structural_model)
-
+common_random(rng::AbstractRNG, structural_model) =
+    no_model_method(common_random, rng, structural_model)
 
 """
     $SIGNATURES
@@ -126,7 +148,7 @@ Methods should be defined by the user for each `auxiliary_model` type. A
 fallback method is defined for `nothing` as data (infeasible parameters). See
 also [`simulate_data`](@ref).
 """
-@no_method_info MLE(model, data)
+MLE(model, data) = no_model_method(MLE, model, data)
 
 MLE(::Any, ::Void) = nothing
 
@@ -135,7 +157,8 @@ MLE(::Any, ::Void) = nothing
 
 Log likelihood of `data` under `model` with `parameters`. See [`MLE`](@ref).
 """
-@no_method_info loglikelihood(model, data, parameters)
+loglikelihood(model, data, parameters) =
+    no_model_method(loglikelihood, model, data, parameters)
 
 """
     indirect_loglikelihood(model, y, x)

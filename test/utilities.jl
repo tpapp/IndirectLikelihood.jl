@@ -9,8 +9,25 @@
 end
 
 @testset "fallback methods" begin
+    msg(fname) = "You need to define `IndirectLikelihood.$(fname)` with this model type."
+
     output = @capture_err begin
         @test_throws MethodError MLE("something", "nonsensical")
     end
-    @test contains(output, "You need to define `MLE` with this model type.")
+    @test contains(output, msg("MLE"))
+
+    output = @capture_err begin
+        @test_throws MethodError common_random(RNG, "undefined")
+    end
+    @test contains(output, msg("common_random"))
+
+    output = @capture_err begin
+        @test_throws MethodError loglikelihood("something", "nonsensical", 2)
+    end
+    @test contains(output, msg("loglikelihood"))
+
+    output = @capture_err begin
+        @test_throws MethodError simulate_data(RNG, "something", "nonsensical", 2)
+    end
+    @test contains(output, msg("simulate_data"))
 end
