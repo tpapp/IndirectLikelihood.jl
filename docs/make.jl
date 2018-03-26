@@ -1,17 +1,10 @@
 using Documenter
 using IndirectLikelihood
-import ContinuousTransformations
 
 """
 Documentation generation wrapped into a single function for development.
 
-Run this file as
-
-```sh
-julia -i make.jl
-```
-
-and call `mkdocs()` repeatedly when working on the documentation.
+Call `mkdocs()` repeatedly when working on the documentation interactively.
 """
 mkdocs() = makedocs(format = :html,
                     sitename = "IndirectLikelihood",
