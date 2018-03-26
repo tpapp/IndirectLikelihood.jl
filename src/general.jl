@@ -41,7 +41,7 @@ See [`common_random`](@ref).
 !!! usage
 
     For interactive/exploratory use. Models should define methods for
-    [`simulate_data(::AbsractRNG, ::Any, ::Any)`](@ref).
+    [`simulate_data(::AbstractRNG, ::Any, ::Any)`](@ref).
 """
 simulate_data(rng::AbstractRNG, structural_model, θ) =
     simulate_data(rng, structural_model, θ, common_random(rng, structural_model))
@@ -56,7 +56,7 @@ See [`common_random`](@ref).
 !!! usage
 
     For interactive/exploratory use. Models should define methods for
-    [`simulate_data(::AbsractRNG, ::Any, ::Any)`](@ref).
+    [`simulate_data(::AbstractRNG, ::Any, ::Any)`](@ref).
 """
 simulate_data(structural_model, θ) = simulate_data(RNG, structural_model, θ)
 

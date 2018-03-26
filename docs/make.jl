@@ -1,5 +1,6 @@
 using Documenter
 using IndirectLikelihood
+using ContinuousTransformations
 
 """
 Documentation generation wrapped into a single function for development.

@@ -41,7 +41,7 @@ struct ToyModel end
 
 common_random(rng::AbstractRNG, ::ToyModel) = 9.0
 
-simulate_data(rng::AbstractRNG, ::ToyModel, _) = 42
+simulate_data(rng::AbstractRNG, ::ToyModel, ::Any, ::Any) = 42
 
 @testset "simulation & CRN barebone" begin
     @test common_random(RNG, ToyModel()) == 9.0
