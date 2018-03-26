@@ -6,7 +6,7 @@ using IndirectLikelihood:
 
 import IndirectLikelihood:
     # problem API
-    simulate_data, generate_crn, update_crn!, MLE, loglikelihood
+    simulate_data, common_random, common_random!, MLE, loglikelihood
 
 using Base.Test
 
@@ -26,6 +26,10 @@ using Suppressor
     @test contains(output, "You need to define `MLE` with this model type.")
 end
 
+const RNG = Base.Random.GLOBAL_RNG
+
+firstline(lines) = split(lines, '\n')[1]
+
 
 # test auxiliary model building blocks
 
@@ -42,7 +46,7 @@ end
         @test mvn.S ≈ (Xc'*Xc)/N
         @test MLE(MvNormalModel(), mvn) == MvNormalParams(mvn.m, mvn.S)
         @test size(mvn) == (N, K)
-        @test repr(mvn) ==
+        @test firstline(repr(mvn)) ==
             "Summary statistics for multivariate normal, $(N) × $(K) samples"
     end
 end
@@ -62,7 +66,7 @@ end
         @test mvn.S ≈ ((values(wv).*Xc)'*Xc)/W
         @test MLE(MvNormalModel(), mvn) == MvNormalParams(mvn.m, mvn.S)
         @test size(mvn) == (W, K)
-        @test repr(mvn) ==
+        @test firstline(repr(mvn)) ==
             "Summary statistics for multivariate normal, $(sum(wv)) × $(K) samples"
     end
 end
@@ -181,9 +185,9 @@ struct NormalMeanModel
     N::Int
 end
 
-generate_crn(model::NormalMeanModel) = randn(model.N)
+common_random(rng::AbstractRNG, model::NormalMeanModel) = randn(rng, model.N)
 
-update_crn!(model::NormalMeanModel, ϵ) = randn!(ϵ)
+common_random!(rng::AbstractRNG, model::NormalMeanModel, ϵ) = randn!(rng, ϵ)
 
 function simulate_data(model::NormalMeanModel, θ, ϵ)
     μ = θ[1]
@@ -194,23 +198,18 @@ simulate_data(::NormalMeanModel, ::String, ::Any) = nothing
 
 @testset "indirect likelihood toy problem" begin
     μ₀ = 2.0
-    p = simulate_problem(x -> zero(x), NormalMeanModel(100),
-                         MvNormalModel(), [μ₀])
+    p = simulate_problem(x -> zero(x), NormalMeanModel(100), MvNormalModel(), [μ₀])
     # find the optimum using the same common random numbers
     f(x) = (-p([x]))[1]
     o = optimize(f, 0.0, 5.0)
     μ₁ = Optim.minimizer(o)
     @test μ₁ ≈ μ₀ atol = 1e-4
     # test common random numbers updating
-    @test mean([(update_crn!(p); mean(p.ϵ)) for _ in 1:1000]) ≈ 0 atol = 0.01
-
+    @test mean([(p = common_random!(RNG, p); mean(p.ϵ))
+                for _ in 1:1000]) ≈ 0 atol = 0.01
     # invalid parameters: when data is nothing, indirect log likelihood is -Inf
     @test p("a fish") == -Inf
     # local jacobian
     parameter_transformation = TransformationTuple((IDENTITY, ))
-    local_jacobian(p, (2.0, ), parameter_transformation)
-end
-
-@testset "no common random numbers" begin
-    @test (update_crn!("something", nothing); true)
+    @test local_jacobian(p, (2.0, ), parameter_transformation) == [1.0 0.0]'
 end

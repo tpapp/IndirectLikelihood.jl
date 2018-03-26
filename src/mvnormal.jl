@@ -41,7 +41,9 @@ size(ss::MvNormalData) = ss.W, length(ss.m)
 
 function show(io::IO, ss::MvNormalData)
     W, k = size(ss)
-    print(io, "Summary statistics for multivariate normal, $(W) × $(k) samples")
+    println(io, "Summary statistics for multivariate normal, $(W) × $(k) samples")
+    println(io, "sample mean: $(ss.m)")
+    println(io, "sample covariance: $(ss.S)")
 end
 
 """

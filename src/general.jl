@@ -1,11 +1,11 @@
 export
     # model and common random numbers
-    simulate_data, generate_crn, update_crn!,
+    simulate_data, common_random, common_random!,
     # likelihood
-    MLE, indirect_loglikelihood, loglikelihood,
+    MLE, loglikelihood, indirect_loglikelihood,
     # modeling API
     IndirectLikelihoodProblem, simulate_problem, loglikelihood, local_jacobian,
-    simulate_data, generate_crn, update_crn, vec_parameters
+    simulate_data, common_random, vec_parameters
 
 
 # structural model and common random numbers
@@ -15,36 +15,48 @@ export
 
 Simulate data from the `structural_model` with the given parameters `θ`. Common
 random numbers `ϵ` are used when provided, otherwise generated using
-[`generate_crn`](@ref).
+[`common_random`](@ref).
 
-Three-argument methods should be defined by the user for each `structural_model`
-type. The function should return simulated `data` in the format that can be used
-by `MLE(auxiliary_model, data)`. For infeasible/meaningless parameters,
-`nothing` should be returned.
+!!! usage
+
+    The user should define a method for this function for each
+    `structural_model` type. The function should return simulated `data` in the
+    format that can be used by [`MLE`](@ref) and [`loglikelihood`](@ref). For
+    infeasible/meaningless parameters, `nothing` should be returned.
 """
 @no_method_info simulate_data(structural_model, θ, ϵ)
 
-simulate_data(structural_model, θ) =
-    simulate_data(structural_model, θ, generate_crn(structural_model))
+"""
+    simulate_data([rng], structural_model, θ)
+
+Simulate data, generating `ϵ` using `rng`, which defaults to [`RNG`](@ref).
+
+See [`common_random`](@ref).
+"""
+simulate_data(rng::AbstractRNG, structural_model, θ) =
+    simulate_data(structural_model, θ, common_random(rng, structural_model))
+
+simulate_data(structural_model, θ) = simulate_data(RNG, structural_model, θ)
 
 """
     $SIGNATURES
 
-Return a container of common random numbers that can be reused by
-[`simulate_data`](@ref) with different parameters. See also
-[`update_crn!`](@ref).
+Return common random numbers that can be reused by [`simulate_data`](@ref) with
+different parameters.
 
-When the model structure does not allow common random numbers, return `nothing`,
-which already has a fallback method for [`update_crn!`](@ref).
+When the model structure does not allow common random numbers, return `nothing`.
 
-The first argument is the random number generator, which defaults to [`RNG`](@ref).
-"""
-@no_method_info generate_crn(rng::AbstractRNG, structural_model)
+The first argument is the random number generator.
 
+!!! usage
+
+    The user should define a method for this function for each
+    `structural_model` type.
+
+See also [`common_random!`](@ref) for further optimizations.
 """
-    $SIGNATURES
-"""
-generate_crn(structural_model) = generate_crn(RNG, structural_model)
+@no_method_info common_random(rng, structural_model)
+
 
 """
     $SIGNATURES
@@ -60,36 +72,32 @@ Two common usage patterns are
 1. having a mutable `ϵ`, updating that in place, returning `ϵ`,
 
 2. generating new `ϵ`, returning that.
+
+!!! note
+
+    The default method falls back to [`common_random`](@ref), reallocating with
+    each call. A method for this function should be defined only when
+    allocations can be optimized.
 """
-@no_method_info update_crn!(rng::AbstractRNG, structural_model, ϵ)
-
-update_crn!(rng::AbstractRNG, ::Any, ::Void) = nothing
-
-update_crn!(structural_model, ϵ) = update_crn!(RNG, structural_model, ϵ)
+common_random!(rng, structural_model, ϵ) = common_random(rng, structural_model)
 
 
 # problem interface
 
 """
-Abstract type for indirect likelihood problems.
-"""
-abstract type AbstractIndirectLikelihoodProblem end
-
-"""
-    IndirectLikelihoodProblem(log_prior, structural_model, auxiliary_model, observed_data)
+    IndirectLikelihoodProblem(data, log_prior, structural_model, auxiliary_model, ϵ)
 
 A simple wrapper for an indirect likelihood problem.
 
-
-The user should implement [`simulate_data`](@ref), [`MLE`](@ref), and
-[`loglikelihood`](@ref), with the signatures above.
+The user should implement [`simulate_data`](@ref), [`MLE`](@ref),
+[`loglikelihood`](@ref), and [`common_random`](@ref).
 """
-struct IndirectLikelihoodProblem{P, S, E, A, D} <: AbstractIndirectLikelihoodProblem
+struct IndirectLikelihoodProblem{P, S, E, A, D}
+    data::D
     log_prior::P
     structural_model::S
-    ϵ::E
     auxiliary_model::A
-    observed_data::D
+    ϵ::E
 end
 
 """
@@ -97,11 +105,10 @@ end
 
 Return a new problem with updated common random numbers.
 """
-function update_crn!(problem::IndirectLikelihoodProblem)
-    @unpack log_prior, structural_model, ϵ, auxiliary_model, observed_data = problem
-    ϵ′ = update_crn!(structural_model, ϵ)
-    IndirectLikelihoodProblem(log_prior, structural_model, ϵ′, auxiliary_model,
-                              observed_data)
+function common_random!(rng::AbstractRNG, problem::IndirectLikelihoodProblem)
+    @unpack data, log_prior, structural_model, auxiliary_model, ϵ = problem
+    ϵ′ = common_random!(rng, structural_model, ϵ)
+    IndirectLikelihoodProblem(data, log_prior, structural_model, auxiliary_model, ϵ′)
 end
 
 
@@ -163,35 +170,39 @@ This is also known the *mapping* or *binding function* in the indirect inference
 literature.
 """
 function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
-    @unpack structural_model, ϵ, auxiliary_model = problem
+    @unpack structural_model, auxiliary_model, ϵ = problem
     x = simulate_data(structural_model, θ, ϵ)
     MLE(auxiliary_model, x)
 end
 
 
 function (problem::IndirectLikelihoodProblem)(θ)
-    @unpack log_prior, auxiliary_model, observed_data = problem
+    @unpack data, log_prior, auxiliary_model = problem
     ϕ = indirect_estimate(problem, θ)
     if ϕ == nothing
         -Inf
     else
-        loglikelihood(auxiliary_model, observed_data, ϕ) + log_prior(θ)
+        loglikelihood(auxiliary_model, data, ϕ) + log_prior(θ)
     end
 end
 
 """
-    $SIGNATURES
+    simulate_problem([rng], log_prior, structural_model, auxiliary_model, θ)
 
 Initialize an [`IndirectLikelihoodProblem`](@ref) with simulated data, using
 parameters `θ`.
 
 Useful for debugging and exploration of identification with simulated data.
 """
-function simulate_problem(log_prior, structural_model, auxiliary_model, θ;
-                          ϵ = generate_crn(structural_model))
-    IndirectLikelihoodProblem(log_prior, structural_model, ϵ, auxiliary_model,
-                              simulate_data(structural_model, θ, ϵ))
+function simulate_problem(rng::AbstractRNG, log_prior, structural_model,
+                          auxiliary_model, θ)
+    ϵ = common_random(rng, structural_model)
+    data = simulate_data(structural_model, θ, ϵ)
+    IndirectLikelihoodProblem(data, log_prior, structural_model, auxiliary_model, ϵ)
 end
+
+simulate_problem(log_prior, structural_model, auxiliary_model, θ) =
+    simulate_problem(RNG, log_prior, structural_model, auxiliary_model, θ)
 
 
 # local analysis
