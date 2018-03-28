@@ -11,6 +11,7 @@ mkdocs() = makedocs(format = :html,
                     sitename = "IndirectLikelihood",
                     pages = ["index.md",
                              "general.md",
+                             "auxiliary.md",
                              "internals.md"])
 
 mkdocs()

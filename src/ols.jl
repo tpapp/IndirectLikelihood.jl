@@ -13,15 +13,15 @@ Ordinary least squares with dependent variable `Y` and design matrix `X`.
 
 Either
 
-1. `Y` is an ``n×m`` matrix, then ``Y = X B + E`` where `X` is a ``n×k`` matrix,
-`B` is a ``k×m`` parameter matrix, and ``Eᵢ ∼ N(0, Σ)`` is IID with ``m×m``
-variance matrix ``Σ`` (multivariate linear regression), or
+1. ``Y`` is an ``n×m`` matrix, then ``Y = X B + E`` where ``X`` is a ``n×k``
+matrix, ``B`` is a ``k×m`` parameter matrix, and ``Eᵢ ∼ N(0, Σ)`` is IID with
+``m×m`` variance matrix ``Σ`` (multivariate linear regression), or
 
-2. `Y` is a length `n` vector, then ``Y = X β + ϵ``, where `X` is a ``n×k``
-matrix, `β` is a parameter vector of `k` elements, and `ϵᵢ ∼ N(0, σ)` where `σ`
-is the variance of the normal error.
+2. ``Y`` is a length ``n`` vector, then ``Y = X β + ϵ``, where ``X`` is a
+``n×k`` matrix, ``β`` is a parameter vector of ``k`` elements, and ``ϵᵢ∼N(0,σ)``
+where ``σ`` is the variance of the normal error.
 
-See [`OLSParams`](@ref) for the parameters.
+See also [`add_intercept`](@ref).
 """
 struct OLSData{TY <: Union{AbstractMatrix, AbstractVector},
                TX <: AbstractMatrix}

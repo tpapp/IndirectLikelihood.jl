@@ -24,9 +24,15 @@ Simulate data from the `structural_model`
 !!! usage
 
     The user should define a method for this function for each
-    `structural_model` type. The function should return simulated `data` in the
-    format that can be used by [`MLE`](@ref) and [`loglikelihood`](@ref). For
-    infeasible/meaningless parameters, `nothing` should be returned.
+    `structural_model` type with the signature
+
+    ```julia
+    simulate_data(rng::AbstractRNG, structural_model, θ, ϵ)
+    ```
+    This should return simulated `data` in the format that can be used by
+    [`MLE`](@ref) and [`loglikelihood`](@ref).
+
+    For infeasible/meaningless parameters, `nothing` should be returned.
 """
 simulate_data(rng::AbstractRNG, structural_model, θ, ϵ) =
     no_model_method(simulate_data, rng, structural_model, θ, ϵ)
@@ -41,7 +47,7 @@ See [`common_random`](@ref).
 !!! usage
 
     For interactive/exploratory use. Models should define methods for
-    [`simulate_data(::AbstractRNG, ::Any, ::Any)`](@ref).
+    [`simulate_data(rng::AbstractRNG, structural_model, θ, ϵ)`](@ref).
 """
 simulate_data(rng::AbstractRNG, structural_model, θ) =
     simulate_data(rng, structural_model, θ, common_random(rng, structural_model))
@@ -56,7 +62,7 @@ See [`common_random`](@ref).
 !!! usage
 
     For interactive/exploratory use. Models should define methods for
-    [`simulate_data(::AbstractRNG, ::Any, ::Any)`](@ref).
+    [`simulate_data(rng::AbstractRNG, structural_model, θ, ϵ)`](@ref).
 """
 simulate_data(structural_model, θ) = simulate_data(RNG, structural_model, θ)
 

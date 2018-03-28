@@ -16,12 +16,6 @@ function is_conformable_square(vector::AbstractVector, matrix::AbstractMatrix)
     size(matrix) == (k, k)
 end
 
-"""
-    MvNormalData(n, m, S)
-
-Multivariate normal model summary statistics with `n` observations, mean `m` and
-sample covariance `S`. Only saves the summary statistics.
-"""
 struct MvNormalData{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
     "sum of the weights (alternatively, total number of observations)"
     W::TW
@@ -29,6 +23,16 @@ struct MvNormalData{TW <: Real, Tm <: AbstractVector, TS <: AbstractMatrix}
     m::Tm
     "(weighted) sample covariance matrix"
     S::TS
+    @doc """
+        MvNormalData(n, m, S)
+
+    Multivariate normal model summary statistics with `n` observations, mean `m`
+    and sample covariance `S`. Only saves the summary statistics.
+
+    !!! usage
+
+        Use `MvNormalData(X, [wv])` to construct from data.
+    """ ->                      # FIXME workaround, remove -> in v0.7
     function MvNormalData(W::TW, m::Tm, S::TS) where {TW <: Real,
                                                       Tm <: AbstractVector,
                                                       TS <: AbstractMatrix}
@@ -68,16 +72,20 @@ function MvNormalData(X::AbstractMatrix, wv::AbstractWeights)
     MvNormalData(sum(wv), vec(m), S)
 end
 
-"""
-    MvNormalParams(μ, Σ)
-
-Parameters for the multivariate normal model ``x ∼ MvNormal(μ, Σ)``.
-"""
 struct MvNormalParams{Tμ, TΣ}
     "mean"
     μ::Tμ
     "variance"
     Σ::TΣ
+    @doc """
+        MvNormalParams(μ, Σ)
+
+    Parameters for the multivariate normal model ``x ∼ MvNormal(μ, Σ)``.
+
+    !!! usage
+
+        Construct using [`MLE(::MvNormalModel, ::MvNormalData)`](@ref).
+    """ ->                      # FIXME workaround, remove -> in v0.7
     function MvNormalParams(μ::Tμ, Σ::TΣ) where {Tμ, TΣ}
         @argcheck is_conformable_square(μ, Σ)
         new{Tμ, TΣ}(μ, Σ)
