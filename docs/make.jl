@@ -15,3 +15,9 @@ mkdocs() = makedocs(format = :html,
                              "internals.md"])
 
 mkdocs()
+
+deploydocs(repo = "github.com/tpapp/IndirectLikelihood.jl.git",
+           target = "build",
+           deps = nothing,
+           make = nothing,
+           julia = "0.6")
