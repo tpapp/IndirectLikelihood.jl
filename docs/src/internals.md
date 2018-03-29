@@ -1,0 +1,5 @@
+# Internals
+
+```@docs
+IndirectLikelihood.RNG
+```
