@@ -237,7 +237,7 @@ var documenterSearchIndex = {"docs": [
     "page": "Auxiliary models",
     "title": "IndirectLikelihood.OLSData",
     "category": "type",
-    "text": "OLSData(Y, X)\n\nOrdinary least squares with dependent variable Y and design matrix X.\n\nEither\n\nY is an nm matrix, then Y = X B + E where X is a nk\n\nmatrix, B is a km parameter matrix, and E  N(0 ) is IID with mm variance matrix  (multivariate linear regression), or\n\nY is a length n vector, then Y = X  + , where X is a\n\nnk matrix,  is a parameter vector of k elements, and N(0) where  is the variance of the normal error.\n\nSee also add_intercept.\n\n\n\n"
+    "text": "OLSData(Y, X)\n\nOrdinary least squares with dependent variable Y and design matrix X.\n\nEither\n\nY is an nm matrix, then Y = X B + E where X is a nk  matrix, B is a km parameter matrix, and E  N(0 ) is IID  with mm variance matrix  (multivariate linear regression), or\nY is a length n vector, then Y = X  + , where X is a  nk matrix,  is a parameter vector of k elements, and  N(0) where  is the variance of the normal error.\n\nSee also add_intercept.\n\n\n\n"
 },
 
 {
