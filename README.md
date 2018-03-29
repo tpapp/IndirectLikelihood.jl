@@ -4,6 +4,7 @@
 [![Build Status](https://travis-ci.org/tpapp/IndirectLikelihood.jl.svg?branch=master)](https://travis-ci.org/tpapp/IndirectLikelihood.jl)
 [![Coverage Status](https://coveralls.io/repos/tpapp/IndirectLikelihood.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/tpapp/IndirectLikelihood.jl?branch=master)
 [![codecov.io](http://codecov.io/github/tpapp/IndirectLikelihood.jl/coverage.svg?branch=master)](http://codecov.io/github/tpapp/IndirectLikelihood.jl?branch=master)
+[![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://tpapp.github.io/IndirectLikelihood.jl/latest)
 
 Framework for indirect likelihood estimation (primarily for using Bayesian methods).
 
