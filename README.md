@@ -6,18 +6,6 @@
 [![codecov.io](http://codecov.io/github/tpapp/IndirectLikelihood.jl/coverage.svg?branch=master)](http://codecov.io/github/tpapp/IndirectLikelihood.jl?branch=master)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://tpapp.github.io/IndirectLikelihood.jl/latest)
 
-Framework for indirect likelihood estimation (primarily for using Bayesian methods).
+Framework for likelihood-based indirect inference (primarily Bayesian methods).
 
-**Work in progress.** Will be documented when API stabilizes, until
-then, see the unit tests and the references below.
-
-## References
-
-- Drovandi, C. C., Pettitt, A. N., Lee, A., & others, (2015). Bayesian indirect
-  inference using a parametric auxiliary model. Statistical Science, 30(1),
-  72–95.
-
-- Gallant, A. R., & McCulloch, R. E. (2009). On the determination of general
-  scientific models with application to asset pricing. Journal of the American
-  Statistical Association, 104(485), 117–131.
-
+**Work in progress.** API is still being finalized. If you are using this package and would prefer it to be registered, please open an issue.
