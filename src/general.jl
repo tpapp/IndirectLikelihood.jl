@@ -147,29 +147,32 @@ end
 
 Maximum likelihood estimate of the parameters for `data` in `model`.
 
-When `ϕ == MLE(model, data)`, `ϕ` should maximize `ϕ -> loglikelihood(model,
-data, ϕ)`. See [`loglikelihood`](@ref).
+When `ϕ == MLE(auxiliary_model, data)`, `ϕ` should maximize
+```julia
+ϕ -> loglikelihood(auxiliary_model, data, ϕ)
+```
+See [`loglikelihood`](@ref).
 
 Methods should be defined by the user for each `auxiliary_model` type. A
 fallback method is defined for `nothing` as data (infeasible parameters). See
 also [`simulate_data`](@ref).
 """
-MLE(model, data) = no_model_method(MLE, model, data)
+MLE(auxiliary_model, data) = no_model_method(MLE, auxiliary_model, data)
 
 MLE(::Any, ::Void) = nothing
 
 """
     $SIGNATURES
 
-Log likelihood of `data` under `model` with `parameters`. See [`MLE`](@ref).
+Log likelihood of `data` under `auxiliary_model` with parameters ``ϕ``. See [`MLE`](@ref).
 """
-loglikelihood(model, data, parameters) =
-    no_model_method(loglikelihood, model, data, parameters)
+loglikelihood(auxiliary_model, data, ϕ) =
+    no_model_method(loglikelihood, auxiliary_model, data, ϕ)
 
 """
-    indirect_loglikelihood(model, y, x)
+    indirect_loglikelihood(auxiliary_model, y, x)
 
-1. estimate `model` from summary statistics `x` using maximum likelihood,
+1. estimate `auxiliary_model` from summary statistics `x` using maximum likelihood,
 
 2. return the likelihood of summary statistics `y` under the estimated parameters.
 
@@ -184,7 +187,8 @@ and `x` the simulated data. See in particular
   inference using a parametric auxiliary model. Statistical Science, 30(1),
   72–95.
 """
-indirect_loglikelihood(model, y, x) = loglikelihood(model, y, MLE(model, x))
+indirect_loglikelihood(auxiliary_model, y, x) =
+    loglikelihood(auxiliary_model, y, MLE(auxiliary_model, x))
 
 
 # problem framework
