@@ -1,4 +1,4 @@
-# Auxiliary models
+# [Auxiliary models](@id auxiliary_models)
 
 Some simple auxiliary models are provided as building blocks.
 

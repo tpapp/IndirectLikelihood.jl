@@ -1,4 +1,4 @@
-# General interface
+# [General interface](@id general_interface)
 
 ## Overview and concepts
 

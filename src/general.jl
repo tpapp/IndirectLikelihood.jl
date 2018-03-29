@@ -177,15 +177,7 @@ loglikelihood(auxiliary_model, data, ϕ) =
 2. return the likelihood of summary statistics `y` under the estimated parameters.
 
 Useful for pseudo-likelihood indirect inference, where `y` would be the observed
-and `x` the simulated data. See in particular
-
-- Gallant, A. R., & McCulloch, R. E. (2009). On the determination of general
-  scientific models with application to asset pricing. Journal of the American
-  Statistical Association, 104(485), 117–131.
-
-- Drovandi, C. C., Pettitt, A. N., Lee, A., & others, (2015). Bayesian indirect
-  inference using a parametric auxiliary model. Statistical Science, 30(1),
-  72–95.
+and `x` the simulated data.
 """
 indirect_loglikelihood(auxiliary_model, y, x) =
     loglikelihood(auxiliary_model, y, MLE(auxiliary_model, x))
