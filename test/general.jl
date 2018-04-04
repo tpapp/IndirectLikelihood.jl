@@ -27,7 +27,7 @@ loglikelihood(::NormalMeanModel, data, ϕ) = loglikelihood(MvNormalModel(), data
     μ₀ = 2.0
     p = simulate_problem(NormalMeanModel(100), x -> zero(x), [μ₀])
     # find the optimum using the same common random numbers
-    f(x) = (-p([x]))[1]
+    f(x) = (-indirect_logposterior(p, [x]))[1]
     o = optimize(f, 0.0, 5.0)
     μ₁ = Optim.minimizer(o)
     @test μ₁ ≈ μ₀ atol = 1e-4
@@ -35,7 +35,7 @@ loglikelihood(::NormalMeanModel, data, ϕ) = loglikelihood(MvNormalModel(), data
     @test mean([(p = common_random!(p); mean(p.ϵ))
                 for _ in 1:1000]) ≈ 0 atol = 0.01
     # invalid parameters: when data is nothing, indirect log likelihood is -Inf
-    @test p("a fish") == -Inf
+    @test indirect_logposterior(p, "a fish") == -Inf
     # local jacobian
     parameter_transformation = TransformationTuple((IDENTITY, ))
     @test local_jacobian(p, (2.0, ), parameter_transformation) == [1.0 0.0]'

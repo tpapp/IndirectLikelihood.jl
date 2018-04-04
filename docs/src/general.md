@@ -38,12 +38,6 @@ The **user should define**
 
 The framework is explained in detail below.
 
-## [Data](@id data)
-
-Data can be of any type, since it is generated and used by user-defined functions. Arrays, tuples (optionally named) are recommended for simple models, as there no need to wrap them in a type since the model type is used for dispatch.
-
-More complex data structures may benefit from being wrapped in a `struct`.
-
 ## Models
 
 The structural and the auxiliary model should be represented by a *type* (ie `struct`) defined for each problem. A single type is used for both the structural and the auxiliary model; since the methods that implement the two aspects are implemented by different methods, this should not cause confusion.
@@ -56,15 +50,6 @@ When applicable, independent variables (eg *covariates*) necessary for simulatio
 
 ```@docs
 simulate_data
-```
-
-### Auxiliary model estimation and likelihood
-
-These methods should be defined for model types, and accept data from [`simulate_data`](@ref).
-
-```@docs
-MLE
-loglikelihood
 ```
 
 ### [Common random numbers](@id common_random_numbers)
@@ -82,6 +67,21 @@ For error structures which can be overwritten in place, the user can define [`co
 
 ```@docs
 common_random!
+```
+
+### [Data](@id data)
+
+Data can be of any type, since it is generated and used by user-defined functions. Arrays, tuples (optionally named) are recommended for simple models, as there no need to wrap them in a type since the model type is used for dispatch.
+
+More complex data structures may benefit from being wrapped in a `struct`.
+
+### Auxiliary model estimation and likelihood
+
+These methods should be defined for model types, and accept data from [`simulate_data`](@ref).
+
+```@docs
+MLE
+loglikelihood
 ```
 
 ## Problem framework

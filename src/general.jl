@@ -238,8 +238,6 @@ end
 Evaluate the indirect log posterior of `problem` at parameters `θ`.
 
 Short-circuits for infeasible parameters.
-
-Also available by just calling the object as `problem(θ)`.
 """
 function indirect_logposterior(problem::IndirectLikelihoodProblem, θ)
     @unpack data, logprior, model = problem
@@ -247,7 +245,14 @@ function indirect_logposterior(problem::IndirectLikelihoodProblem, θ)
     ϕ == nothing ? -Inf : loglikelihood(model, data, ϕ) + logprior(θ)
 end
 
-(problem::IndirectLikelihoodProblem)(θ) = indirect_logposterior(problem, θ)
+"""
+    $SIGNATURES
+
+Return a callable that evaluates `indirect_logposterior(problem, θ)` at the
+given `θ`.
+"""
+indirect_logposterior(problem::IndirectLikelihoodProblem) =
+    θ -> indirect_logposterior(problem, θ)
 
 
 # local analysis
