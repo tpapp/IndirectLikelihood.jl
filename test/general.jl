@@ -25,7 +25,7 @@ loglikelihood(::NormalMeanModel, data, ϕ) = loglikelihood(MvNormalModel(), data
 
 @testset "indirect likelihood toy problem" begin
     μ₀ = 2.0
-    p = simulate_problem(NormalMeanModel(100), x -> zero(x), [μ₀])
+    p = simulate_problem(NormalMeanModel(100), zero ∘ first, [μ₀])
     # find the optimum using the same common random numbers
     f(x) = (-indirect_logposterior(p, [x]))[1]
     o = optimize(f, 0.0, 5.0)
@@ -39,6 +39,14 @@ loglikelihood(::NormalMeanModel, data, ϕ) = loglikelihood(MvNormalModel(), data
     # local jacobian
     parameter_transformation = TransformationTuple((IDENTITY, ))
     @test local_jacobian(p, (2.0, ), parameter_transformation) == [1.0 0.0]'
+    # buildup of likelihood
+    p2 = IndirectLikelihoodProblem(NormalMeanModel(100), zero ∘ first, p.data)
+    θ = [μ₀]
+    y = simulate_data(p2.rng, p2.model, θ, p2.ϵ)
+    ϕ = MLE(p2.model, y)
+    ℓ = loglikelihood(p2.model, p2.data, ϕ)
+    @test indirect_logposterior(p2, θ) == ℓ
+    @test indirect_logposterior(p2, θ) == indirect_logposterior(p2)(θ)
 end
 
 struct ToyModel end
