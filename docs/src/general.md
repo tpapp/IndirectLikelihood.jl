@@ -86,10 +86,24 @@ loglikelihood
 
 ## Problem framework
 
+Estimation problems can be organized into a single structure, which contains the model and data objects, and also a (log) prior in the parameters. This simplifies the evaluation of likelihoods.
+
+The common random numbers are saved in the object. Use [`common_random!`](@ref) to update them.
+
 ```@docs
 IndirectLikelihoodProblem
-simulate_problem
+```
+
+You can then obtain the (log) posterior at the parameters. Note the single-argument version which returns a callable.
+
+```@docs
 indirect_logposterior
+```
+
+For testing inference with simulated data, the following function can be used to create a problem object.
+
+```@docs
+simulate_problem
 ```
 
 ## Utilities
