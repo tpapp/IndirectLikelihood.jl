@@ -89,6 +89,7 @@ common_random!
 ```@docs
 IndirectLikelihoodProblem
 simulate_problem
+indirect_logposterior
 ```
 
 ## Utilities
@@ -96,5 +97,4 @@ simulate_problem
 ```@docs
 local_jacobian
 vec_parameters
-indirect_loglikelihood
 ```

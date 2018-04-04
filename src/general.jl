@@ -2,7 +2,7 @@ export
     # model and common random numbers
     simulate_data, common_random, common_random!,
     # likelihood
-    MLE, loglikelihood, indirect_loglikelihood,
+    MLE, loglikelihood, indirect_logposterior,
     # modeling API
     IndirectLikelihoodProblem, simulate_problem, loglikelihood, local_jacobian,
     simulate_data, common_random, vec_parameters
@@ -214,19 +214,6 @@ Log likelihood of `data` under `model` with parameters ``ϕ``. See [`MLE`](@ref)
 """
 loglikelihood(model, data, ϕ) = no_model_method(loglikelihood, model, data, ϕ)
 
-"""
-    indirect_loglikelihood(model, y, x)
-
-1. estimate `model` from summary statistics `x` using maximum likelihood,
-
-2. return the likelihood of summary statistics `y` under the estimated
-   parameters.
-
-Useful for pseudo-likelihood indirect inference, where `y` would be the observed
-and `x` the simulated data.
-"""
-indirect_loglikelihood(model, y, x) = loglikelihood(model, y, MLE(model, x))
-
 
 # problem framework
 
@@ -245,12 +232,22 @@ function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
     x == nothing ? nothing : MLE(model, x)
 end
 
+"""
+    $SIGNATURES
 
-function (problem::IndirectLikelihoodProblem)(θ)
+Evaluate the indirect log posterior of `problem` at parameters `θ`.
+
+Short-circuits for infeasible parameters.
+
+Also available by just calling the object as `problem(θ)`.
+"""
+function indirect_logposterior(problem::IndirectLikelihoodProblem, θ)
     @unpack data, logprior, model = problem
     ϕ = indirect_estimate(problem, θ)
     ϕ == nothing ? -Inf : loglikelihood(model, data, ϕ) + logprior(θ)
 end
+
+(problem::IndirectLikelihoodProblem)(θ) = indirect_logposterior(problem, θ)
 
 
 # local analysis
