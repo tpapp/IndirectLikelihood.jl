@@ -176,6 +176,16 @@ end
 """
     $SIGNATURES
 
+Simulate data with the given parameters `θ`.
+"""
+function simulate_data(problem::IndirectLikelihoodProblem, θ)
+    @unpack rng, model, ϵ = problem
+    simulate_data(rng, model, θ, ϵ)
+end
+
+"""
+    $SIGNATURES
+
 Initialize an [`IndirectLikelihoodProblem`](@ref) with simulated data, using
 parameters `θ`.
 
@@ -227,9 +237,8 @@ This is also known the *mapping* or *binding function* in the indirect inference
 literature.
 """
 function indirect_estimate(problem::IndirectLikelihoodProblem, θ)
-    @unpack rng, model, ϵ = problem
-    x = simulate_data(rng, model, θ, ϵ)
-    x == nothing ? nothing : MLE(model, x)
+    data = simulate_data(problem, θ)
+    data == nothing ? nothing : MLE(problem.model, data)
 end
 
 """
