@@ -5,7 +5,7 @@ export
     MLE, loglikelihood, indirect_logposterior,
     # modeling API
     IndirectLikelihoodProblem, simulate_problem, loglikelihood, local_jacobian,
-    simulate_data, common_random, vec_parameters
+    vec_parameters
 
 
 # structural model and common random numbers
