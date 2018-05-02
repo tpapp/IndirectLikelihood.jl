@@ -47,6 +47,5 @@ end
         mvnY = MvNormalData(Y)
         ℓ = sum(logpdf(MvNormal(paramsX.μ, paramsX.Σ), Y'))
         @test ℓ ≈ loglikelihood(MvNormalModel(), mvnY, paramsX)
-        @test ℓ ≈ indirect_loglikelihood(MvNormalModel(), mvnY, mvnX)
     end
 end

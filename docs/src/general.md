@@ -25,9 +25,9 @@ This is multiplied by a prior in ``θ``, specified in logs.
 
 The **user should define**
 
-1. **types** for the *structural model* and the *auxiliary model*,
+1. **a model type**, which represents *both the structural and the auxiliary model*,
 
-2. **methods** for the functions below to dispatch on these types.
+2. **methods** for the functions below to dispatch on this type.
 
 | component                   | Julia method            |
 |:----------------------------|:------------------------|
@@ -38,23 +38,21 @@ The **user should define**
 
 The framework is explained in detail below.
 
-## [Data](@id data)
+## Models
 
-Data can be of any type, since it is generated and used by user-defined functions. Arrays, tuples (optionally named) are recommended for simple models, as there no need to wrap them in a type, as the auxiliary model type is used for dispatch.
+The structural and the auxiliary model should be represented by a *type* (ie `struct`) defined for each problem. A single type is used for both the structural and the auxiliary model; since the methods that implement the two aspects are implemented by different methods, this should not cause confusion.
 
-More complex data structures may benefit from being wrapped in a `struct`.
+### Simulating data
 
-## Structural models
+The (structural) model is used to generate [data](@ref data) from parameters ``θ`` and common random numbers ``ϵ`` using [`simulate_data`](@ref). The mapping is not necessarily deterministic even given ``ϵ``, as additional randomness is allowed, but [common random numbers](@ref common_random_numbers) are advantageous since they make the mapping from structural to auxiliary parameters continuous. When used for simulation, common random numbers also reduce variance.
 
-A structural model can be used to generate [data](@ref data) from parameters ``θ`` and random numbers ``ϵ`` using [`simulate_data`](@ref). The mapping is not necessarily deterministic even given ``ϵ``, but the latter can be used for [common random numbers](@ref common_random_numbers) for certain models, to make the mapping continuous, or reduce variance in simulations.
-
-When applicable, independent variables (eg covariates) necessary for simulation should be included in the structural model object. It is recommended that a type is defined for each problem, along with methods for [`simulate_data`](@ref).
+When applicable, independent variables (eg *covariates*) necessary for simulation should be included in the structural model object. It is recommended that a type is defined for each problem, along with methods for [`simulate_data`](@ref).
 
 ```@docs
 simulate_data
 ```
 
-## [Common random numbers](@id common_random_numbers)
+### [Common random numbers](@id common_random_numbers)
 
 Common random numbers are a set of random numbers that can be re-used for for
 simulation with different parameter values.
@@ -71,9 +69,15 @@ For error structures which can be overwritten in place, the user can define [`co
 common_random!
 ```
 
-## Likelihood
+### [Data](@id data)
 
-These methods should be defined for stuctural model types, and accept data from [`simulate_data`](@ref).
+Data can be of any type, since it is generated and used by user-defined functions. Arrays, tuples (optionally named) are recommended for simple models, as there no need to wrap them in a type since the model type is used for dispatch.
+
+More complex data structures may benefit from being wrapped in a `struct`.
+
+### Auxiliary model estimation and likelihood
+
+These methods should be defined for model types, and accept data from [`simulate_data`](@ref).
 
 ```@docs
 MLE
@@ -82,8 +86,23 @@ loglikelihood
 
 ## Problem framework
 
+Estimation problems can be organized into a single structure, which contains the model and data objects, and also a (log) prior in the parameters. This simplifies the evaluation of likelihoods.
+
+The common random numbers are saved in the object. Use [`common_random!`](@ref) to update them.
+
 ```@docs
 IndirectLikelihoodProblem
+```
+
+You can then obtain the (log) posterior at the parameters. Note the single-argument version which returns a callable.
+
+```@docs
+indirect_logposterior
+```
+
+For testing inference with simulated data, the following function can be used to create a problem object.
+
+```@docs
 simulate_problem
 ```
 
@@ -92,5 +111,4 @@ simulate_problem
 ```@docs
 local_jacobian
 vec_parameters
-indirect_loglikelihood
 ```
